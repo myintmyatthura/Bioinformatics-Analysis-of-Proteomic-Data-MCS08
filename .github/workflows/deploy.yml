@@ -22,4 +22,5 @@ jobs:
           script: |
             cd /srv/shiny-server/Bioinformatics-Analysis-of-Proteomic-Data-MCS08
             git pull origin main  # Pull latest code
+            Rscript deploy.R # install dependencies
             sudo systemctl restart shiny-server  # Restart server
