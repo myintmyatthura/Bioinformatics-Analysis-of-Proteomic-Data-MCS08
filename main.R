@@ -81,8 +81,8 @@ server <- function(input, output, session) {
                               br(),
                               fileInput("file", "Upload CSV File", accept = ".csv"),
                               verbatimTextOutput("fileInfo"),
-                              textInput("ci_columns", "Enter CI Columns (comma-separated):", ""),
-                              textInput("he_columns", "Enter HE Columns (comma-separated):", ""),
+                              textInput("ci_columns", "Enter Patient Sample Columns (comma-separated):", ""),
+                              textInput("he_columns", "Enter Healthy Control Sample Columns (comma-separated):", ""),
                               textInput("log2_threshold", "Enter Log2 Fold Change Threshold (eg: 1):", ""),
                               textInput("pval_threshold", "Enter Adjusted P-Value Threshold (eg: 0.05):", ""),
                               actionButton("start_analysis", "Start Analysis"),
@@ -241,7 +241,7 @@ server <- function(input, output, session) {
   })
   
   
-
+  
   
   
   processedData <- eventReactive(input$start_analysis, {
