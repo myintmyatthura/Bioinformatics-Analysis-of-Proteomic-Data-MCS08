@@ -1,3 +1,8 @@
+custom_lib <- "/srv/shiny-server/Bioinformatics-Analysis-of-Proteomic-Data-MCS08/r_libs"
+if (dir.exists(custom_lib)) {
+  .libPaths(c(custom_lib, .libPaths()))
+}
+
 library(shiny)
 library(shinythemes)
 library(limma)
