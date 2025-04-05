@@ -4,6 +4,8 @@ library(limma)
 library(ggplot2)
 library(pheatmap)
 library(RColorBrewer)
+library(httr)
+library(jsonlite)
 
 
 ui <- fluidPage(
@@ -17,7 +19,8 @@ server <- function(input, output, session) {
   login_attempt <- reactiveVal(FALSE)
   statusMessage <- reactiveVal("Please upload a file and click 'Start Analysis'")
   processingMessage <- reactiveVal("Results Not Ready")
-  
+  pubmedLinks <- reactiveVal(NULL)
+  pubMessage <- reactiveVal("Not ready!")
 
   
   output$status_message <- renderText({
@@ -128,6 +131,15 @@ server <- function(input, output, session) {
                                     actionButton("show_more", "Show More"),
                                     actionButton("show_less", "Show Less")
                                 )
+                              ),
+                              
+                              conditionalPanel(
+                                condition = "input.fetch_pubmed % 2 == 1",
+                                div(style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;", 
+                                    h4("PubMed Article Links"),
+                                    p("Below are links to PubMed articles related to studying the correlation between each significant protein and strokes."),
+                                    uiOutput("pubmedUI")
+                                )
                               )
                             )
                             
@@ -159,6 +171,7 @@ server <- function(input, output, session) {
   output$buttons <- renderUI({
     message <- statusMessage()
     processing <- processingMessage()
+    pubmessage <- pubMessage()
     
     # Choose color based on status message
     btn_color <- if (message == "Analysis complete!") {
@@ -169,12 +182,20 @@ server <- function(input, output, session) {
       "#FFFFFF"  # Default (white)
     }
     
+    pub_color <- if (pubmessage == "Ok!") {
+      "#009914"
+    } else {
+      "#ff0000"
+    }
+    
+    
     # Disable buttons if processing is not "Done!"
     is_disabled <- processing != "Done!"
+    pub_disb <- pubmessage != "Ok!"
     
     # Wrap buttons in a div with inline-block styling
     div(
-      style = "display: flex; gap: 10px;",  # Arrange buttons side by side with spacing
+      style = "display: flex; gap: 10px; flex-wrap: wrap;",  # Responsive layout with spacing
       actionButton("toggle_volcano", "Volcano Plot", 
                    style = paste("background-color:", btn_color, " !important;",
                                  "border-color:", btn_color, " !important;",
@@ -191,9 +212,16 @@ server <- function(input, output, session) {
                    style = paste("background-color:", btn_color, " !important;",
                                  "border-color:", btn_color, " !important;",
                                  "color: black; width: 150px; height: 40px;"),
+                   disabled = is_disabled),
+      
+      actionButton("fetch_pubmed", "PubMed Articles", 
+                   style = paste("background-color:", btn_color, " !important;",
+                                 "border-color:", btn_color, " !important;",
+                                 "color: black; width: 150px; height: 40px;"),
                    disabled = is_disabled)
     )
   })
+  
   
   
   
@@ -237,8 +265,18 @@ server <- function(input, output, session) {
     statusMessage("Running analysis... Please wait.")
     processingMessage("Running")
     processedData()  # Run the analysis
-    Sys.sleep(2)  # Simulate delay
+    
   })
+  
+  observe({
+    if (processingMessage() == "Done!") {
+      # Wait 10 seconds, then enable the PubMed button
+      shinyjs::delay(10000, {
+        pubMessage("Ok!")
+      })
+    }
+  })
+  
   
   
   
@@ -348,6 +386,47 @@ server <- function(input, output, session) {
   
   observeEvent(input$show_less, {
     tableData(head(processedData()$result, 20))
+  })
+  
+  getPubMedLinks <- function(protein_name) {
+    query <- URLencode(paste0(protein_name, " stroke"))
+    esearch_url <- paste0("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?",
+                          "db=pubmed&retmode=json&retmax=5&term=", query)
+    search_response <- tryCatch({ GET(esearch_url) }, error = function(e) return(NULL))
+    if (is.null(search_response) || http_error(search_response)) return(NULL)
+    search_result <- content(search_response, as = "parsed", type = "application/json")
+    ids <- search_result$esearchresult$idlist
+    if (length(ids) == 0) return(NULL)
+    links <- paste0("https://pubmed.ncbi.nlm.nih.gov/", ids)
+    return(links)
+  }
+  
+  observeEvent(input$fetch_pubmed, {
+    req(processedData())
+    significant_proteins <- processedData()$significant_proteins$Protein
+    pubmed_links_list <- lapply(significant_proteins, function(prot) {
+      links <- getPubMedLinks(prot)
+      list(protein = prot, links = links)
+    })
+    pubmedLinks(pubmed_links_list)
+  })
+  
+  output$pubmedUI <- renderUI({
+    req(pubmedLinks())
+    tagList(
+      h4("PubMed Links for Stroke-Related Proteins"),
+      lapply(pubmedLinks(), function(entry) {
+        if (is.null(entry$links)) return(NULL)
+        tagList(
+          tags$h5(entry$protein),
+          tags$ul(
+            lapply(entry$links, function(link) {
+              tags$li(tags$a(href = link, target = "_blank", link))
+            })
+          )
+        )
+      })
+    )
   })
   
 }
