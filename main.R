@@ -26,7 +26,7 @@ server <- function(input, output, session) {
   processingMessage <- reactiveVal("Results Not Ready")
   pubmedLinks <- reactiveVal(NULL)
   pubMessage <- reactiveVal("Not ready!")
-
+  
   
   output$status_message <- renderText({
     message <- statusMessage()
@@ -99,7 +99,7 @@ server <- function(input, output, session) {
                             ,
                             mainPanel(
                               uiOutput("buttons"),
-                            
+                              
                               br(), br(),
                               
                               # Volcano Plot Section
@@ -347,9 +347,9 @@ server <- function(input, output, session) {
     processingMessage("Done!")
     tableData(head(result, 20))
     list(normalized_matrix = normalized_matrix, result = result, significant_proteins = significant_proteins)
-
+    
   })
-
+  
   output$volcanoPlot <- renderPlot({
     req(processedData())
     result <- processedData()$result
@@ -437,3 +437,5 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui = ui, server = server)
+
+
