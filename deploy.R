@@ -5,7 +5,7 @@ dir.create(lib_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Define required packages
 required_packages <- c("shiny", "ggplot2", "dplyr", "testthat", "shinythemes",
-                       "limma", "pheatmap", "RColorBrewer")
+                       "limma", "pheatmap", "RColorBrewer","httr","jsonlite")
 
 
 # Install missing packages to the project library
