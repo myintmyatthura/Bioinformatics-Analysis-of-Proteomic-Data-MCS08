@@ -11,17 +11,77 @@ library(pheatmap)
 library(RColorBrewer)
 library(httr)
 library(jsonlite)
+library(DBI)
+library(pool)
 
+config <- fromJSON(readLines("config.json"))
+
+
+# Create the pool connection using the config values
+pool <- dbPool(
+  drv = RPostgres::Postgres(),
+  dbname = config$db$dbname,
+  host = config$db$host,
+  port = config$db$port,
+  user = config$db$user,
+  password = config$db$password
+)
+
+initializeDB <- function(pool) {
+  
+  
+  # Create users table
+  dbExecute(pool, "
+    CREATE TABLE IF NOT EXISTS users (
+      user_id SERIAL PRIMARY KEY,
+      username VARCHAR(50) UNIQUE NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      email VARCHAR(100) UNIQUE NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  ")
+  
+  # Create analysis_history table
+  dbExecute(pool, "
+    CREATE TABLE IF NOT EXISTS analysis_history (
+      analysis_id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(user_id),
+      filename VARCHAR(255) NOT NULL,
+      s3_file_key VARCHAR(255) NOT NULL,
+      ci_columns TEXT,
+      he_columns TEXT,
+      log2_threshold FLOAT,
+      pval_threshold FLOAT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      result_s3_key VARCHAR(255)
+    )
+  ")
+}
+
+initializeDB(pool)
 
 ui <- fluidPage(
   theme = shinytheme("cerulean"),
   uiOutput("dynamicUI")
 )
 
+con <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = config$db$dbname,
+  host = config$db$host,
+  port = config$db$port,
+  user = config$db$user,
+  password = config$db$password
+)
+dbListTables(con)
+
+
+
 server <- function(input, output, session) {
   user_auth <- reactiveVal(FALSE)
   tableData <- reactiveVal(NULL)
   login_attempt <- reactiveVal(FALSE)
+  show_register <- reactiveVal(FALSE)
   statusMessage <- reactiveVal("Please upload a file and click 'Start Analysis'")
   processingMessage <- reactiveVal("Results Not Ready")
   pubmedLinks <- reactiveVal(NULL)
@@ -66,20 +126,43 @@ server <- function(input, output, session) {
         )
       )
     } else if (!user_auth()) {
-      fluidPage(
-        titlePanel("Login"),
-        sidebarLayout(
-          sidebarPanel(
-            textInput("username", "Username"),
-            passwordInput("password", "Password"),
-            actionButton("login", "Login"),
-            textOutput("login_message")
-          ),
-          mainPanel(
-            h3("Please enter your credentials to continue.")
+      if (!show_register()){
+        fluidPage(
+          titlePanel("Login"),
+          sidebarLayout(
+            sidebarPanel(
+              textInput("username", "Username"),
+              passwordInput("password", "Password"),
+              actionButton("login", "Login"),
+              textOutput("login_message"),
+              hr(),
+              actionButton("show_register_form", "Create New Account")
+            ),
+            mainPanel(
+              h3("Please enter your credentials to continue.")
+            )
           )
         )
-      )
+      } else {
+        fluidPage(
+          titlePanel("Register New Account"),
+          sidebarLayout(
+            sidebarPanel(
+              textInput("reg_username", "Username"),
+              textInput("reg_email", "Email"),
+              passwordInput("reg_password","Password"),
+              passwordInput("reg_confirm_password","Confirm Password"),
+              actionButton("register", "Register"),
+              textOutput("register_message"),
+              hr(),
+              actionButton("back_to_login", "Back To Login")
+            ),
+            mainPanel(
+              h3("Create a new account to get started")
+            )
+          )
+        )
+      }
     } else {
       navbarPage("Protein Quantitation Analysis",
                  tabPanel("Analysis", 
@@ -228,20 +311,26 @@ server <- function(input, output, session) {
   })
   
   
-  
-  
-  
-  
   observeEvent(input$goToLogin, {
     login_attempt(TRUE)
   })
   
   observeEvent(input$login, {
-    if (input$username == "admin" && input$password == "admin") {
+    user_result <- verifyLogin(input$username, input$password)
+    if(!is.null(user_result)) {
+      user_id <- user_result
       user_auth(TRUE)
     } else {
       output$login_message <- renderText("Invalid username or password. Please try again.")
     }
+  })
+  
+  observeEvent(input$show_register_form, {
+    show_register(TRUE)
+  })
+  
+  observeEvent(input$back_to_login, {
+    show_register(FALSE)
   })
   
   observeEvent(input$logout, {
@@ -281,10 +370,6 @@ server <- function(input, output, session) {
       })
     }
   })
-  
-  
-  
-  
   
   
   processedData <- eventReactive(input$start_analysis, {
@@ -433,6 +518,54 @@ server <- function(input, output, session) {
       })
     )
   })
+  
+  observeEvent(input$register, {
+    if(input$reg_password == input$reg_confirm_password) {
+      success <- registerUser(input$reg_username, input$reg_password, input$reg_email)
+      if(success) {
+        output$register_message <- renderText("Registration successful! Please log in.")
+        show_register(FALSE) # Switch back to login view
+      } else {
+        output$register_message <- renderText("Username or email already exists!")
+      }
+    } else {
+      output$register_message <- renderText("Passwords do not match!")
+    }
+  })
+  
+  # user registration function
+  registerUser <- function(username, password, email){
+    
+    # if username exist
+    user_exists <- dbGetQuery(pool, sprintf("SELECT 1 FROM users WHERE username ='%s' OR email ='%s' LIMIT 1", username, email))
+    if (nrow((user_exists))>0){
+      return (FALSE)
+    }
+    
+    password_hash <- digest::digest(password, algo="sha256")
+    
+    user_data <- dbGetQuery(pool, sprintf("SELECT user_id FROM users WHERE username ='%s' AND password_hash = '%s'", username, password_hash))
+    dbExecute(pool, sprintf("INSERT INTO users (username, password_hash, email) VALUES ('%s', '%s', '%s')",
+                            username, password_hash, email))
+    return(TRUE)
+  }
+  
+  # User login function
+  verifyLogin <- function(username, password) {
+    # Hash the provided password
+    password_hash <- digest::digest(password, algo = "sha256")
+    
+    # Query the database
+    user_data <- dbGetQuery(pool, sprintf("SELECT user_id FROM users WHERE username = '%s' AND password_hash = '%s'",
+                                          username, password_hash))
+    
+    if(nrow(user_data) == 1) {
+      return(user_data$user_id[1]) # Return user ID on success
+    } else {
+      return(NULL) # Return NULL on failure
+    }
+    
+  }
   
 }
 
