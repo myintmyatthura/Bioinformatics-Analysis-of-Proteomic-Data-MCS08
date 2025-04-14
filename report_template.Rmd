@@ -1,0 +1,31 @@
+---
+title: "Proteomic Analysis Report"
+output: 
+  pdf_document:
+    includes:
+      in_header: header.tex
+params:
+  volcano_path: ""
+  heatmap_path: ""
+  result_table: NULL
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r volcano_plot}
+knitr::include_graphics(params$volcano_path)
+```
+
+```{r heatmap_plot}
+knitr::include_graphics(params$heatmap_path)
+```
+
+```{r table, results='asis'}
+knitr::kable(params$result_table, format = "latex", booktabs = TRUE, longtable = TRUE)
+```
+
+
+
