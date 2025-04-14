@@ -10,8 +10,8 @@ if (!"BiocManager" %in% installed.packages()[,"Package"]) {
   install.packages("BiocManager", repos = "https://cran.rstudio.com/")
 }
 required_packages <- c("shiny", "ggplot2", "dplyr", "testthat", "shinythemes",
-                       "pheatmap", "RColorBrewer","httr","jsonlite",
-                       "pool", "DBI")
+                       "pheatmap", "RColorBrewer", "httr", "jsonlite",
+                       "pool", "DBI", "tinytex", "rmarkdown", "knitr")
 bioc_packages <- c("limma")
 
 
@@ -27,6 +27,10 @@ for (pkg in required_packages) {
   }
 }
 
+if (!tinytex::is_tinytex()) {
+  cat("Installing TinyTeX distribution...\n")
+  tinytex::install_tinytex()
+}
 
 # Add this library to the search path
 .libPaths(c(lib_dir, .libPaths()))

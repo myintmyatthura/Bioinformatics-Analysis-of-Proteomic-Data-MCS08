@@ -13,6 +13,10 @@ library(httr)
 library(jsonlite)
 library(DBI)
 library(pool)
+library(rmarkdown)
+library(knitr)
+library(tinytex)
+
 
 config <- fromJSON(readLines("config.json"))
 
@@ -178,6 +182,8 @@ server <- function(input, output, session) {
                               textInput("pval_threshold", "Enter Adjusted P-Value Threshold (eg: 0.05):", ""),
                               actionButton("start_analysis", "Start Analysis"),
                               textOutput("processingMessage", inline = TRUE),
+                              br(), br(),
+                              downloadButton("download_report", "Download Full Report (PDF)")
                             )
                             ,
                             mainPanel(
@@ -624,6 +630,57 @@ server <- function(input, output, session) {
       write.csv(tableData(), file, row.names = FALSE)
     }
   )
+  
+  output$download_report <- downloadHandler(
+    filename = function() {
+      paste("Proteomic_Report_", Sys.Date(), ".pdf", sep = "")
+    },
+    content = function(file) {
+      # Save volcano plot to PNG
+      volcano_path <- tempfile(fileext = ".png")
+      png(volcano_path, width = 1000, height = 800)
+      result <- processedData()$result
+      print(
+        ggplot(result, aes(x = logFC, y = -log10(adj.P.Val), color = Significance)) +
+          geom_point(alpha = 0.7, size = 2) +
+          scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "gray")) +
+          theme_minimal() +
+          labs(title = "Volcano Plot", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value")
+      )
+      dev.off()
+      
+      # Save heatmap plot to PNG
+      heatmap_path <- tempfile(fileext = ".png")
+      png(heatmap_path, width = 1000, height = 800)
+      significant_proteins <- processedData()$significant_proteins
+      filtered_expression_matrix <- processedData()$normalized_matrix[significant_proteins$Protein, ]
+      pheatmap(
+        filtered_expression_matrix, 
+        scale = "row",
+        clustering_distance_rows = "euclidean", 
+        clustering_method = "ward.D2",
+        color = colorRampPalette(c("blue", "white", "red"))(100),
+        breaks = seq(-1.5, 1.5, length.out = 101),
+        legend_breaks = c(-1.5, -1, -0.5, 0, 0.5, 1, 1.5),
+        legend_labels = c("-1.5 (Strongly Down)", "-1", "-0.5", "0 (No Change)", "0.5", "1", "1.5 (Strongly Up)"),
+        main = "logFC Heatmap with Clustering"
+      )
+      dev.off()
+      
+      # Render PDF using RMarkdown
+      rmarkdown::render(
+        input = "report_template.Rmd",
+        output_file = file,
+        params = list(
+          volcano_path = volcano_path,
+          heatmap_path = heatmap_path,
+          result_table = processedData()$result
+        ),
+        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+  
   
 }
 
