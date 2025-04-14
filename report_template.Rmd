@@ -10,7 +10,6 @@ params:
   result_table: NULL
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
@@ -23,9 +22,12 @@ knitr::include_graphics(params$volcano_path)
 knitr::include_graphics(params$heatmap_path)
 ```
 
-```{r table, results='asis'}
-knitr::kable(params$result_table, format = "latex", booktabs = TRUE, longtable = TRUE)
+```{r result_table, results='asis'}
+cat("\\begin{landscape}\n")
+
+kableExtra::kable(params$result_table, format = "latex", booktabs = TRUE, longtable = TRUE) %>%
+  kableExtra::kable_styling(latex_options = c("repeat_header"), font_size = 7) %>%
+  print()
+
+cat("\\end{landscape}\n")
 ```
-
-
-
