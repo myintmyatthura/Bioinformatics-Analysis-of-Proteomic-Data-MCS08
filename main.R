@@ -16,7 +16,7 @@ library(pool)
 library(rmarkdown)
 library(knitr)
 library(tinytex)
-
+library(kableExtra)
 
 config <- fromJSON(readLines("config.json"))
 
@@ -176,6 +176,8 @@ server <- function(input, output, session) {
                               br(),
                               fileInput("file", "Upload CSV File", accept = ".csv"),
                               verbatimTextOutput("fileInfo"),
+                              textInput("protein_columns", "Enter Protein Name columns (eg: 'Protein Name')", ""),
+                              textInput("gene_columns", "Enter Gene Name columns (eg: 'Gene Name')", ""),
                               textInput("ci_columns", "Enter Patient Sample Columns (comma-separated):", ""),
                               textInput("he_columns", "Enter Healthy Control Sample Columns (comma-separated):", ""),
                               textInput("log2_threshold", "Enter Log2 Fold Change Threshold (eg: 1):", ""),
@@ -354,20 +356,34 @@ server <- function(input, output, session) {
   
   
   dataset <- reactive({
-    req(input$file)
-    read.csv(input$file$datapath, row.names = 1, check.names = FALSE)
+    req(input$file, input$protein_columns)
+    
+    # Read just the column names
+    column_names <- names(read.csv(input$file$datapath, nrows = 1, check.names = FALSE))
+    
+    # Find the index of the column that matches the user input
+    col_num <- which(column_names == input$protein_columns)
+    
+
+    # Use the column number for row.names
+    read.csv(input$file$datapath, row.names = col_num, check.names = FALSE)
   })
+  
   
   output$fileInfo <- renderText({
     req(input$file)
     file <- input$file
-    data <- dataset()
+    
+    # Read the CSV without setting row names
+    raw_data <- read.csv(file$datapath, check.names = FALSE)
+    
     paste("File Name:", file$name, "\n",
           "File Type:", file$type, "\n",
           "File Size:", file$size, "bytes\n",
-          "Row Count:", nrow(data), "\n",
-          "Column Names:", paste(colnames(data), collapse = ", "))
+          "Row Count:", nrow(raw_data), "\n",
+          "Column Names:", paste(colnames(raw_data), collapse = ", "))
   })
+  
   
   observeEvent(input$start_analysis, {
     statusMessage("Running analysis... Please wait.")
@@ -388,16 +404,18 @@ server <- function(input, output, session) {
   
   processedData <- eventReactive(input$start_analysis, {
     
-    req(input$file, input$ci_columns, input$he_columns, input$log2_threshold, input$pval_threshold)
+    req(input$file,input$protein_columns,input$gene_columns, input$ci_columns, input$he_columns, input$log2_threshold, input$pval_threshold)
     log2_threshold <- as.numeric(input$log2_threshold)
     pval_threshold <- as.numeric(input$pval_threshold)
     data <- dataset()
     data <- data[!grepl("immunoglobulin", data$ProteinDescriptions, ignore.case = TRUE), ]
+
     
     ci_cols <- strsplit(input$ci_columns, ",")[[1]]
     he_cols <- strsplit(input$he_columns, ",")[[1]]
     ci_cols <- trimws(ci_cols)
     he_cols <- trimws(he_cols)
+
     
     
     if (!all(ci_cols %in% colnames(data)) || !all(he_cols %in% colnames(data))) {
@@ -435,7 +453,12 @@ server <- function(input, output, session) {
     result <- topTable(fitlc, adjust = "BH", number = Inf)
     
     result$Protein <- rownames(result)
-    result <- result[, c("Protein", setdiff(colnames(result), "Protein"))] 
+    gene_col <- input$gene_columns
+    
+    
+    result$Gene <- data[rownames(result), gene_col]
+    
+    result <- result[, c("Protein", "Gene", setdiff(colnames(result), c("Protein", "Gene")))]
     
     result$Significance <- ifelse(result$adj.P.Val < pval_threshold & abs(result$logFC) > log2_threshold, 
                                   ifelse(result$logFC > log2_threshold, "Upregulated", "Downregulated"), 
@@ -493,17 +516,36 @@ server <- function(input, output, session) {
   })
   
   getPubMedLinks <- function(protein_name) {
-    query <- URLencode(paste0(protein_name, " stroke"))
+    query <- URLencode(paste0(protein_name, "protein stroke"))
     esearch_url <- paste0("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?",
                           "db=pubmed&retmode=json&retmax=5&term=", query)
+    
     search_response <- tryCatch({ GET(esearch_url) }, error = function(e) return(NULL))
     if (is.null(search_response) || http_error(search_response)) return(NULL)
+    
     search_result <- content(search_response, as = "parsed", type = "application/json")
     ids <- search_result$esearchresult$idlist
     if (length(ids) == 0) return(NULL)
-    links <- paste0("https://pubmed.ncbi.nlm.nih.gov/", ids)
+    
+    # Fetch titles using esummary
+    esummary_url <- paste0("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?",
+                           "db=pubmed&retmode=json&id=", paste(ids, collapse = ","))
+    
+    summary_response <- tryCatch({ GET(esummary_url) }, error = function(e) return(NULL))
+    if (is.null(summary_response) || http_error(summary_response)) return(NULL)
+    
+    summary_data <- content(summary_response, as = "parsed", type = "application/json")
+    
+    # Combine title + link
+    links <- lapply(ids, function(id) {
+      title <- summary_data$result[[id]]$title
+      url <- paste0("https://pubmed.ncbi.nlm.nih.gov/", id)
+      list(title = title, url = url)
+    })
+    
     return(links)
   }
+  
   
   observeEvent(input$fetch_pubmed, {
     req(processedData())
@@ -524,14 +566,17 @@ server <- function(input, output, session) {
         tagList(
           tags$h5(entry$protein),
           tags$ul(
-            lapply(entry$links, function(link) {
-              tags$li(tags$a(href = link, target = "_blank", link))
+            lapply(entry$links, function(link_entry) {
+              tags$li(
+                tags$a(href = link_entry$url, target = "_blank", link_entry$title)
+              )
             })
           )
         )
       })
     )
   })
+  
   
   observeEvent(input$register, {
     if(input$reg_password == input$reg_confirm_password) {
