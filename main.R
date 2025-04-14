@@ -193,7 +193,10 @@ server <- function(input, output, session) {
                                     p("The volcano plot visualizes the relationship between the log fold change and adjusted p-value of proteins. 
            Points in red indicate significantly upregulated proteins, while points in blue indicate significantly downregulated proteins. 
            Gray points are not significant."),
-                                    plotOutput("volcanoPlot")
+                                    plotOutput("volcanoPlot"),
+                                    downloadButton("download_volcano", "Download Volcano Plot (PNG)")
+                                    
+                                    
                                 )
                               ),
                               
@@ -204,7 +207,9 @@ server <- function(input, output, session) {
                                     h4("Heatmap Plot"),
                                     p("The heatmap represents the expression levels of significantly different proteins. 
            Red indicates higher expression, blue indicates lower expression, and clustering shows relationships among proteins."),
-                                    plotOutput("heatmapPlot")
+                                    plotOutput("heatmapPlot"),
+                                    downloadButton("download_heatmap", "Download Heatmap Plot (PNG)")
+                                    
                                 )
                               ),
                               
@@ -217,7 +222,10 @@ server <- function(input, output, session) {
            It includes log fold change, adjusted p-values, and classification as upregulated, downregulated, or not significant."),
                                     tableOutput("filteredResults"),
                                     actionButton("show_more", "Show More"),
-                                    actionButton("show_less", "Show Less")
+                                    actionButton("show_less", "Show Less"),
+                                    br(),
+                                    downloadButton("download_table", "Download Table (CSV)")
+                                    
                                 )
                               ),
                               
@@ -566,6 +574,56 @@ server <- function(input, output, session) {
     }
     
   }
+  
+  output$download_volcano <- downloadHandler(
+    filename = function() {
+      paste("volcano_plot", Sys.Date(), ".png", sep = "")
+    },
+    content = function(file) {
+      png(file, width = 1000, height = 800)
+      result <- processedData()$result
+      print(
+        ggplot(result, aes(x = logFC, y = -log10(adj.P.Val), color = Significance)) +
+          geom_point(alpha = 0.7, size = 2) +
+          scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "gray")) +
+          theme_minimal() +
+          labs(title = "Volcano Plot", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value")
+      )
+      dev.off()
+    }
+  )
+  
+  output$download_heatmap <- downloadHandler(
+    filename = function() {
+      paste("heatmap_plot", Sys.Date(), ".png", sep = "")
+    },
+    content = function(file) {
+      png(file, width = 1000, height = 800)
+      significant_proteins <- processedData()$significant_proteins
+      filtered_expression_matrix <- processedData()$normalized_matrix[significant_proteins$Protein, ]
+      pheatmap(
+        filtered_expression_matrix, 
+        scale = "row",
+        clustering_distance_rows = "euclidean", 
+        clustering_method = "ward.D2",
+        color = colorRampPalette(c("blue", "white", "red"))(100),
+        breaks = seq(-1.5, 1.5, length.out = 101),
+        legend_breaks = c(-1.5, -1, -0.5, 0, 0.5, 1, 1.5),
+        legend_labels = c("-1.5 (Strongly Down)", "-1", "-0.5", "0 (No Change)", "0.5", "1", "1.5 (Strongly Up)"),
+        main = "logFC Heatmap with Clustering"
+      )
+      dev.off()
+    }
+  )
+  
+  output$download_table <- downloadHandler(
+    filename = function() {
+      paste("filtered_results", Sys.Date(), ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(tableData(), file, row.names = FALSE)
+    }
+  )
   
 }
 
