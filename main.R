@@ -739,6 +739,7 @@ server <- function(input, output, session) {
   }
   
   
+  
   observeEvent(input$fetch_pubmed, {
     req(processedData())
     significant_proteins <- processedData()$significant_proteins$Protein
@@ -748,6 +749,68 @@ server <- function(input, output, session) {
     })
     pubmedLinks(pubmed_links_list)
   })
+  
+  observe({
+    req(pubmedLinks())
+    
+    lapply(pubmedLinks(), function(entry) {
+      acc <- entry$protein
+      
+      observeEvent(input[[paste0("show_string_", acc)]], {
+        
+        meta <- get_uniprot_metadata(acc)
+        gene <- if (!is.null(meta$gene) && !is.na(meta$gene)) meta$gene else acc
+        
+        showModal(modalDialog(
+          title = paste0(gene, "'s Protein2 Interaction Map"),
+          
+          # STRING DB image
+          tags$img(
+            src = paste0("https://string-db.org/api/highres_image/network?identifiers=", acc, "&species=9606"),
+            style = "width: 100%; height: auto; max-width: 1200px;"
+          ),
+          
+          br(),
+          
+          # FUNCTION section
+          if (!is.null(meta$fnc) && length(meta$fnc) > 0)
+            tagList(
+              tags$h4("Function"),
+              tags$ul(
+                lapply(meta$fnc, function(f) tags$li(f))
+              )
+            )
+          else NULL,
+          
+          # CATALYTIC section
+          if (!is.null(meta$catalytic) && length(meta$catalytic) > 0)
+            tagList(
+              tags$h4("Catalytic Activity"),
+              tags$ul(
+                lapply(meta$catalytic, function(line) {
+                  tags$li(line)
+                })
+              )
+            )
+          else NULL,
+          
+          # Modal style
+          tags$style(HTML("
+          .modal-lg {
+            width: 90% !important;
+            max-width: 1400px;
+          }
+        ")),
+          
+          easyClose = TRUE,
+          size = "l"
+        ))
+      })
+    })
+  })
+  
+  
+  
   
   output$pubmedUI <- renderUI({
     req(pubmedLinks())
@@ -773,6 +836,14 @@ server <- function(input, output, session) {
             if (!is.null(meta$gene) && !is.na(meta$gene)) paste0(" (Gene: ", meta$gene, ")"),
             if (!is.null(meta$protein) && !is.na(meta$protein)) paste0(" — ", meta$protein)
           ),
+          
+          # ⇩ Button to trigger the STRING modal
+          actionButton(
+            inputId = paste0("show_string_", accession),
+            label = paste0(meta$gene, "'s Protein2 Interaction Map")
+          ),
+          br(),br(),
+          
           tags$ul(
             lapply(entry$links, function(link_entry) {
               tags$li(
@@ -781,6 +852,7 @@ server <- function(input, output, session) {
             })
           )
         )
+        
       })
     )
   })
@@ -824,30 +896,72 @@ server <- function(input, output, session) {
     
     if (is.null(txt)) return(NULL)
     
-    # Extract gene name
+    # Helper: remove evidence tags
+    strip_evidence <- function(text) {
+      gsub("\\s*\\{[^}]+\\}", "", text)
+    }
+    
+    # Gene Name
     gene_line <- grep("^GN\\s+Name=", txt, value = TRUE)
     gene <- if (length(gene_line) > 0) {
-      clean <- sub(".*Name=([^;]+);.*", "\\1", gene_line[1])
-      gsub("\\s*\\{[^}]*\\}", "", clean)  # Remove {...}
-    } else {
-      NA
-    }
+      sub(".*Name=([^;]+);.*", "\\1", gene_line[1])
+    } else NA
     
-    # Extract protein description
+    # Protein Name
     recname_line <- grep("^DE\\s+RecName: Full=", txt, value = TRUE)
     protein_name <- if (length(recname_line) > 0) {
-      clean <- sub(".*Full=([^;]+);.*", "\\1", recname_line[1])
-      gsub("\\s*\\{[^}]*\\}", "", clean)  # Remove {...}
-    } else {
-      NA
+      sub(".*Full=([^;]+);.*", "\\1", recname_line[1])
+    } else NA
+    
+    # --- MULTIPLE FUNCTION BLOCKS ---
+    fnc <- list()
+    fnc_starts <- grep("^CC   -!- FUNCTION:", txt)
+    
+    for (idx in fnc_starts) {
+      lines <- c()
+      first_line <- sub("^CC   -!- FUNCTION:\\s*", "", txt[idx])
+      lines <- c(lines, first_line)
+      
+      i <- idx + 1
+      while (i <= length(txt) && grepl("^CC       ", txt[i])) {
+        lines <- c(lines, sub("^CC       ", "", txt[i]))
+        i <- i + 1
+      }
+      
+      block <- paste(lines, collapse = " ")
+      block <- strip_evidence(block)
+      fnc <- append(fnc, list(block))
     }
     
-    list(
+    # --- MULTIPLE CATALYTIC BLOCKS ---
+    catalytic <- list()
+    cat_starts <- grep("^CC   -!- CATALYTIC ACTIVITY:", txt)
+    
+    for (idx in cat_starts) {
+      lines <- c()
+      first_line <- sub("^CC   -!- CATALYTIC ACTIVITY:\\s*", "", txt[idx])
+      lines <- c(lines, first_line)
+      
+      i <- idx + 1
+      while (i <= length(txt) && grepl("^CC       ", txt[i])) {
+        lines <- c(lines, sub("^CC       ", "", txt[i]))
+        i <- i + 1
+      }
+      
+      block <- paste(lines, collapse = " ")
+      block <- strip_evidence(block)
+      catalytic <- append(catalytic, list(block))
+    }
+    
+    return(list(
       accession = accession,
       gene = gene,
-      protein = protein_name
-    )
+      protein = protein_name,
+      fnc = fnc,               # Now a list
+      catalytic = catalytic    # Also a list
+    ))
   }
+  
   
   
   
