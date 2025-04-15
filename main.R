@@ -751,19 +751,106 @@ server <- function(input, output, session) {
   
   output$pubmedUI <- renderUI({
     req(pubmedLinks())
-    tagList(h4("PubMed Links for Stroke-Related Proteins"),
-            lapply(pubmedLinks(), function(entry) {
-              if (is.null(entry$links))
-                return(NULL)
-              tagList(tags$h5(entry$protein), tags$ul(lapply(entry$links, function(link_entry) {
-                tags$li(tags$a(
-                  href = link_entry$url,
-                  target = "_blank",
-                  link_entry$title
-                ))
-              })))
-            }))
+    
+    tagList(
+      h4("PubMed Links for Stroke-Related Proteins"),
+      
+      lapply(pubmedLinks(), function(entry) {
+        if (is.null(entry$links)) return(NULL)
+        
+        # Pull UniProt accession
+        accession <- entry$protein
+        
+        # Get metadata
+        meta <- get_uniprot_metadata(accession)
+        
+        # Construct UniProt link
+        uniprot_url <- paste0("https://www.uniprot.org/uniprotkb/", accession, "/entry")
+        
+        tagList(
+          tags$h5(
+            tags$a(href = uniprot_url, target = "_blank", accession),
+            if (!is.null(meta$gene) && !is.na(meta$gene)) paste0(" (Gene: ", meta$gene, ")"),
+            if (!is.null(meta$protein) && !is.na(meta$protein)) paste0(" — ", meta$protein)
+          ),
+          tags$ul(
+            lapply(entry$links, function(link_entry) {
+              tags$li(
+                tags$a(href = link_entry$url, target = "_blank", link_entry$title)
+              )
+            })
+          )
+        )
+      })
+    )
   })
+  
+  
+  
+  
+  
+  get_uniprot_accession <- function(protein_name, organism_id = 9606) {
+    base_url <- "https://rest.uniprot.org/uniprotkb/search"
+    query <- paste0(protein_name, " AND organism_id:", organism_id)
+    response <- tryCatch({
+      GET(url = base_url, query = list(query = query, format = "json"))
+    }, error = function(e) return(NULL))
+    
+    if (is.null(response) || http_error(response)) return(NA)
+    
+    content_text <- content(response, as = "text", encoding = "UTF-8")
+    
+    parsed <- tryCatch({
+      fromJSON(content_text)
+    }, error = function(e) return(NULL))
+    
+    if (!is.null(parsed) &&
+        is.list(parsed) &&
+        "results" %in% names(parsed) &&
+        length(parsed$results) > 0 &&
+        "primaryAccession" %in% names(parsed$results[[1]])) {
+      return(parsed$results[[1]]$primaryAccession)
+    }
+    
+    return(NA)
+  }
+  
+  get_uniprot_metadata <- function(accession) {
+    url <- paste0("https://rest.uniprot.org/uniprotkb/", accession, ".txt")
+    
+    txt <- tryCatch({
+      readLines(url, warn = FALSE)
+    }, error = function(e) return(NULL))
+    
+    if (is.null(txt)) return(NULL)
+    
+    # Extract gene name
+    gene_line <- grep("^GN\\s+Name=", txt, value = TRUE)
+    gene <- if (length(gene_line) > 0) {
+      clean <- sub(".*Name=([^;]+);.*", "\\1", gene_line[1])
+      gsub("\\s*\\{[^}]*\\}", "", clean)  # Remove {...}
+    } else {
+      NA
+    }
+    
+    # Extract protein description
+    recname_line <- grep("^DE\\s+RecName: Full=", txt, value = TRUE)
+    protein_name <- if (length(recname_line) > 0) {
+      clean <- sub(".*Full=([^;]+);.*", "\\1", recname_line[1])
+      gsub("\\s*\\{[^}]*\\}", "", clean)  # Remove {...}
+    } else {
+      NA
+    }
+    
+    list(
+      accession = accession,
+      gene = gene,
+      protein = protein_name
+    )
+  }
+  
+  
+  
   
   
   observeEvent(input$register, {
