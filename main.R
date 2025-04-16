@@ -1172,7 +1172,8 @@ server <- function(input, output, session) {
         params = list(
           volcano_path = volcano_path,
           heatmap_path = heatmap_path,
-          result_table = processedData()$result
+          result_table = processedData()$result,
+          username = input$username  # or whichever variable holds the current username
         ),
         envir = new.env(parent = globalenv())
       )

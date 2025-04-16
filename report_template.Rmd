@@ -1,5 +1,7 @@
 ---
 title: "Proteomic Analysis Report"
+subtitle: "Downloaded by user: `r params$username`"  # Display username under title
+date: "`r Sys.Date()`"                         # Display current date
 output: 
   pdf_document:
     includes:
@@ -8,7 +10,9 @@ params:
   volcano_path: ""
   heatmap_path: ""
   result_table: NULL
+  username: ""  # Add a parameter to store the username
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
