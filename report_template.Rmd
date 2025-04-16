@@ -9,27 +9,36 @@ output:
 params:
   volcano_path: ""
   heatmap_path: ""
+  protein2_path: ""
   result_table: NULL
   username: ""  # Add a parameter to store the username
 ---
+
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+# Volcano Plot
 ```{r volcano_plot}
 knitr::include_graphics(params$volcano_path)
 ```
 
+# Heatmap Plot
 ```{r heatmap_plot}
 knitr::include_graphics(params$heatmap_path)
 ```
 
+# Protein2 Interaction Map
+```{r protein2map_plot}
+knitr::include_graphics(params$protein2_path)
+```
+
+\newpage
 ```{r result_table, results='asis'}
 cat("\\begin{landscape}\n")
-
-kableExtra::kable(params$result_table, format = "latex", booktabs = TRUE, longtable = TRUE) %>%
+kableExtra::kable(params$result_table,caption = "Significant Proteins Table", format = "latex", booktabs = TRUE, longtable = TRUE) %>%
   kableExtra::kable_styling(latex_options = c("repeat_header"), font_size = 7) %>%
   print()
 
