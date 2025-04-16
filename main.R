@@ -18,6 +18,9 @@ library(knitr)
 library(tinytex)
 library(kableExtra)
 library(readxl)
+library(magick)
+
+addResourcePath("assets", ".")
 
 config <- fromJSON(readLines("config.json"))
 
@@ -277,10 +280,13 @@ server <- function(input, output, session) {
            It includes log fold change, adjusted p-values, and classification as upregulated, downregulated, or not significant."
                 ),
                 tableOutput("filteredResults"),
-                actionButton("show_more", "Show More"),
-                actionButton("show_less", "Show Less"),
+                actionButton("show_less", "Show Significant Proteins"),
+                actionButton("show_more", "Show All Proteins"),
+                
                 br(),
-                downloadButton("download_table", "Download Table (CSV)")
+                downloadButton("download_table_significant", "Download Table Significant Proteins (CSV)"),
+                downloadButton("download_table", "Download Table For All Proteins (CSV)"),
+                
                 
               )
             ),
@@ -295,7 +301,21 @@ server <- function(input, output, session) {
                 ),
                 uiOutput("pubmedUI")
               )
+            ),
+            conditionalPanel(
+              condition = "input.toggle_protein2 % 2 == 1",
+              div(
+                style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                h4("Protein2 Mapping"),
+                p("This generates a protein interaction network image from STRING DB based on the significant proteins obtained from the analysis."),
+                uiOutput("protein2Mapping"),
+                downloadButton("download_protein2", "Download Protein Interaction Map (PNG)")
+              )
             )
+            
+            
+            
+            
           )
           
         )),
@@ -349,7 +369,6 @@ server <- function(input, output, session) {
       "#ff0000"
     }
     
-    
     # Disable buttons if processing is not "Done!"
     is_disabled <- processing != "Done!"
     pub_disb <- pubmessage != "Ok!"
@@ -357,68 +376,59 @@ server <- function(input, output, session) {
     # Wrap buttons in a div with inline-block styling
     div(
       style = "display: flex; gap: 10px; flex-wrap: wrap;",
-      # Responsive layout with spacing
       actionButton(
         "toggle_volcano",
         "Volcano Plot",
         style = paste(
-          "background-color:",
-          btn_color,
-          " !important;",
-          "border-color:",
-          btn_color,
-          " !important;",
+          "background-color:", btn_color, " !important;",
+          "border-color:", btn_color, " !important;",
           "color: black; width: 150px; height: 40px;"
         ),
         disabled = is_disabled
       ),
-      
       actionButton(
         "toggle_heatmap",
         "Heatmap Plot",
         style = paste(
-          "background-color:",
-          btn_color,
-          " !important;",
-          "border-color:",
-          btn_color,
-          " !important;",
+          "background-color:", btn_color, " !important;",
+          "border-color:", btn_color, " !important;",
           "color: black; width: 150px; height: 40px;"
         ),
         disabled = is_disabled
       ),
-      
       actionButton(
         "toggle_table",
         "Filtered Table",
         style = paste(
-          "background-color:",
-          btn_color,
-          " !important;",
-          "border-color:",
-          btn_color,
-          " !important;",
+          "background-color:", btn_color, " !important;",
+          "border-color:", btn_color, " !important;",
           "color: black; width: 150px; height: 40px;"
         ),
         disabled = is_disabled
       ),
-      
       actionButton(
         "fetch_pubmed",
         "PubMed Articles",
         style = paste(
-          "background-color:",
-          btn_color,
-          " !important;",
-          "border-color:",
-          btn_color,
-          " !important;",
+          "background-color:", btn_color, " !important;",
+          "border-color:", btn_color, " !important;",
+          "color: black; width: 150px; height: 40px;"
+        ),
+        disabled = is_disabled
+      ),
+      actionButton(
+        "toggle_protein2",
+        "Protein2 Mapping",
+        style = paste(
+          "background-color:", btn_color, " !important;",
+          "border-color:", btn_color, " !important;",
           "color: black; width: 150px; height: 40px;"
         ),
         disabled = is_disabled
       )
     )
   })
+  
   
   
   observeEvent(input$goToLogin, {
@@ -678,17 +688,21 @@ server <- function(input, output, session) {
   })
   
   output$filteredResults <- renderTable({
-    req(tableData())
-    tableData()
+    req(processedData())
+    significant_results <- processedData()$result[processedData()$result$Significance != "Not Significant", ]
+    significant_results
   })
+  
   
   observeEvent(input$show_more, {
     tableData(processedData()$result)
   })
   
   observeEvent(input$show_less, {
-    tableData(head(processedData()$result, 20))
+    filtered_results <- processedData()$result[processedData()$result$Significance != "Not Significant", ]
+    tableData(filtered_results)
   })
+  
   
   getPubMedLinks <- function(protein_name) {
     query <- URLencode(paste0(protein_name, "protein stroke"))
@@ -1054,6 +1068,104 @@ server <- function(input, output, session) {
     
   }
   
+  output$protein2Mapping <- renderUI({
+    req(processedData())
+    
+    # Extract the significant proteins from the processed data
+    sig_proteins <- processedData()$significant_proteins
+    
+    if (nrow(sig_proteins) > 0) {
+      # Join the protein identifiers using "%0d"
+      protein_ids <- paste(sig_proteins$Protein, collapse = "%0d")
+      
+      # Construct the STRING API URL
+      string_url <- paste0("https://string-db.org/api/highres_image/network?identifiers=", protein_ids, "&species=9606")
+      
+      # Display the protein interaction network image and the legend image below it.
+      tags$div(
+        tags$img(src = string_url, style = "width: 100%; height: auto; max-width: 1200px;"),
+        tags$br(), tags$br(),
+        tags$img(
+          src = "assets/PROTEIN_LEGENDS.PNG",
+          style = "display: block; margin-left: auto; margin-right: auto; width: 50%; height: auto;"
+        )
+        
+      )
+    } else {
+      p("No significant proteins found.")
+    }
+  })
+  
+  
+  output$download_protein2 <- downloadHandler(
+    filename = function() {
+      paste("protein_interaction_map", Sys.Date(), ".png", sep = "")
+    },
+    content = function(file) {
+      # Ensure processed data is available
+      req(processedData())
+      
+      # Extract the significant proteins
+      sig_proteins <- processedData()$significant_proteins
+      
+      if (nrow(sig_proteins) > 0) {
+        # Join the protein identifiers using "%0d"
+        protein_ids <- paste(sig_proteins$Protein, collapse = "%0d")
+        
+        # Construct the STRING API URL
+        string_url <- paste0("https://string-db.org/api/highres_image/network?identifiers=", protein_ids, "&species=9606")
+        
+        library(magick)
+        
+        # Read the network image from STRING
+        network_img <- image_read(string_url)
+        
+        # Read the local legend image (ensure the file is in the working directory or accessible via correct path)
+        legend_img <- image_read("PROTEIN_LEGENDS.PNG")
+        
+        # Get the width of the network image
+        network_info <- image_info(network_img)
+        network_width <- network_info$width
+        
+        # Resize the legend image to 50% of the network image's width
+        target_width <- floor(network_width * 0.5)
+        legend_img <- image_scale(legend_img, paste0(target_width, "x"))
+        
+        # Get resized legend dimensions
+        legend_info <- image_info(legend_img)
+        legend_height <- legend_info$height
+        
+        # Create a blank transparent canvas (using "none" for transparency)
+        canvas <- image_blank(width = network_width, height = legend_height, color = "none")
+        
+        # Calculate the left offset to center the legend image on the canvas
+        offset_left <- floor((network_width - target_width) / 2)
+        offset <- paste0("+", offset_left, "+0")
+        
+        # Composite the legend image onto the transparent canvas using operator "over"
+        legend_centered <- image_composite(canvas, legend_img, offset = offset, operator = "over")
+        
+        # Append the network image and the centered legend image vertically
+        combined_img <- image_append(c(network_img, legend_centered), stack = TRUE)
+        
+        # Write the combined image as a PNG file, preserving transparency
+        image_write(combined_img, path = file, format = "png")
+      } else {
+        # If no significant proteins are found, generate a blank image with a message
+        png(file, width = 1000, height = 800)
+        plot.new()
+        text(0.5, 0.5, "No significant proteins found.", cex = 1.5)
+        dev.off()
+      }
+    }
+  )
+  
+  
+  
+  
+  
+  
+  
   output$download_volcano <- downloadHandler(
     filename = function() {
       paste("volcano_plot", Sys.Date(), ".png", sep = "")
@@ -1112,6 +1224,17 @@ server <- function(input, output, session) {
       dev.off()
     }
   )
+  
+  output$download_table_significant <- downloadHandler(
+    filename = function() {
+      paste("filtered_results_significant", Sys.Date(), ".csv", sep = "")
+    },
+    content = function(file) {
+      sig_results <- processedData()$result[processedData()$result$Significance != "Not Significant", ]
+      write.csv(sig_results, file, row.names = FALSE)
+    }
+  )
+  
   
   output$download_table <- downloadHandler(
     filename = function() {
@@ -1176,20 +1299,81 @@ server <- function(input, output, session) {
       )
       dev.off()
       
-      # Render PDF using RMarkdown
+      # Save Protein2 Mapping plot to PNG (combine network image & legend using magick)
+      protein2_path <- tempfile(fileext = ".png")
+      sig_proteins <- processedData()$significant_proteins
+      if (nrow(sig_proteins) > 0) {
+        # Join the protein identifiers using "%0d"
+        protein_ids <- paste(sig_proteins$Protein, collapse = "%0d")
+        
+        # Construct the STRING API URL
+        string_url <- paste0("https://string-db.org/api/highres_image/network?identifiers=", protein_ids, "&species=9606")
+        
+        library(magick)
+        
+        # Read the network image from STRING
+        network_img <- image_read(string_url)
+        
+        # Read the local legend image (adjust path if needed)
+        legend_img <- image_read("PROTEIN_LEGENDS.PNG")
+        
+        # Get the width of the network image
+        network_info <- image_info(network_img)
+        network_width <- network_info$width
+        
+        # Resize the legend image to 50% of the network image's width
+        target_width <- floor(network_width * 0.5)
+        legend_img <- image_scale(legend_img, paste0(target_width, "x"))
+        
+        # Get resized legend dimensions
+        legend_info <- image_info(legend_img)
+        legend_height <- legend_info$height
+        
+        # Create a blank transparent canvas (with no background color)
+        canvas <- image_blank(width = network_width, height = legend_height, color = "none")
+        
+        # Calculate the left offset to center the legend image on the canvas
+        offset_left <- floor((network_width - target_width) / 2)
+        offset <- paste0("+", offset_left, "+0")
+        
+        # Composite the legend image onto the transparent canvas using operator "over"
+        legend_centered <- image_composite(canvas, legend_img, offset = offset, operator = "over")
+        
+        # Append the network image and the centered legend image vertically
+        combined_img <- image_append(c(network_img, legend_centered), stack = TRUE)
+        
+        # Scale the combined image up by 40% (i.e. 140% of its original size)
+        combined_img <- image_scale(combined_img, "140%")
+        
+        # Write the combined image as a PNG file, preserving transparency
+        image_write(combined_img, path = protein2_path, format = "png")
+        
+      } else {
+        # If no significant proteins are found, generate a blank image with a message
+        png(protein2_path, width = 2500, height = 2300)
+        plot.new()
+        text(0.5, 0.5, "No significant proteins found", cex = 1.5)
+        dev.off()
+      }
+      
+      # Render PDF using RMarkdown and include all three images in the report
       rmarkdown::render(
         input = "report_template.Rmd",
         output_file = file,
         params = list(
           volcano_path = volcano_path,
           heatmap_path = heatmap_path,
-          result_table = processedData()$result,
-          username = input$username  # or whichever variable holds the current username
+          protein2_path = protein2_path,
+          result_table = processedData()$result[processedData()$result$Significance != "Not Significant", ],
+          username = input$username  # Ensure this variable holds the current username if needed
         ),
         envir = new.env(parent = globalenv())
       )
     }
   )
+  
+  
+  
   
   
 }
