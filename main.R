@@ -830,6 +830,13 @@ server <- function(input, output, session) {
         # Construct UniProt link
         uniprot_url <- paste0("https://www.uniprot.org/uniprotkb/", accession, "/entry")
         
+        # Clean the gene name to remove curly brackets and their content
+        if (!is.null(meta$gene) && !is.na(meta$gene)) {
+          clean_gene <- trimws(gsub("\\{[^}]*\\}", "", meta$gene))
+        } else {
+          clean_gene <- ""
+        }
+        
         tagList(
           tags$h5(
             tags$a(href = uniprot_url, target = "_blank", accession),
@@ -837,12 +844,12 @@ server <- function(input, output, session) {
             if (!is.null(meta$protein) && !is.na(meta$protein)) paste0(" — ", meta$protein)
           ),
           
-          # ⇩ Button to trigger the STRING modal
+          # ⇩ Button to trigger the STRING modal using the cleaned gene name in the label
           actionButton(
             inputId = paste0("show_string_", accession),
-            label = paste0(meta$gene, "'s Protein2 Interaction Map")
+            label = paste0(clean_gene, "'s Protein2 Interaction Map")
           ),
-          br(),br(),
+          br(), br(),
           
           tags$ul(
             lapply(entry$links, function(link_entry) {
@@ -852,10 +859,10 @@ server <- function(input, output, session) {
             })
           )
         )
-        
       })
     )
   })
+  
   
   
   
@@ -904,14 +911,18 @@ server <- function(input, output, session) {
     # Gene Name
     gene_line <- grep("^GN\\s+Name=", txt, value = TRUE)
     gene <- if (length(gene_line) > 0) {
-      sub(".*Name=([^;]+);.*", "\\1", gene_line[1])
+      raw_gene <- sub(".*Name=([^;]+);.*", "\\1", gene_line[1])
+      strip_evidence(raw_gene)  # remove any curly bracket evidence tags
     } else NA
+    
     
     # Protein Name
     recname_line <- grep("^DE\\s+RecName: Full=", txt, value = TRUE)
     protein_name <- if (length(recname_line) > 0) {
-      sub(".*Full=([^;]+);.*", "\\1", recname_line[1])
+      raw_protein <- sub(".*Full=([^;]+);.*", "\\1", recname_line[1])
+      strip_evidence(raw_protein)  # remove any curly brackets and their contents
     } else NA
+    
     
     # --- MULTIPLE FUNCTION BLOCKS ---
     fnc <- list()
