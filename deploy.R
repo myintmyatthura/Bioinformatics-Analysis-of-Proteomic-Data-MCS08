@@ -11,7 +11,7 @@ if (!"BiocManager" %in% installed.packages()[,"Package"]) {
 }
 required_packages <- c("shiny", "ggplot2", "dplyr", "testthat", "shinythemes",
                        "pheatmap", "RColorBrewer", "httr", "jsonlite",
-                       "pool", "DBI", "tinytex", "rmarkdown", "knitr","kableExtra","readxl","magick")
+                       "pool", "DBI", "tinytex", "rmarkdown", "knitr","kableExtra","readxl","magick","ggrepel")
 bioc_packages <- c("limma")
 
 
