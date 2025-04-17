@@ -345,7 +345,155 @@ server <- function(input, output, session) {
             h3("Contributors", style = "text-align: center;"),
             p("Dr. John Doe, Dr. Jane Smith, Alex Johnson.", style = "text-align: center;")
           )
-        ))
+        )),
+        tabPanel("Usage",
+                 fluidPage(
+                   div(style = "text-align: center;",
+                       
+                       # Main heading
+                       h2("Usage"),
+                       
+                       # Intro instructions
+                       p(
+                         "To use this software, first upload your proteomics data on the Analysis tab.
+   If you’d like to try a sample dataset, download it below and then re‑upload it here.",
+                         style = "font-size:18px;"
+                       ),
+                       
+                       
+                       # Sample file download
+                       h4("Sample CSV File"),
+                       downloadButton("download_sample_csv", "Download ProteinquantitationHE&CI.csv"),
+                       
+                       br(), br(),
+                       
+                       # Input fields explanation
+                       h3("Input Fields"),
+                       tags$ul(style = "list-style-position: inside; padding-left: 0; text-align: center; font-size: 18px",
+                         tags$li(strong("1. File Upload:"), "Select your proteomics dataset in CSV or XLSX format. This should contain your raw expression values."),
+                         tags$li(strong("2. Protein Name Column:"), "Specify the header name for the column that lists protein identifiers (e.g. “Protein Name”)."),
+                         tags$li(strong("3. Gene Name Column:"), "Enter the header for the column that contains gene symbols (e.g. “Gene Name”)."),
+                         tags$li(strong("4. Patient Sample Columns:"), "Comma‑separated list of column names corresponding to patient (case) samples—these values will be compared to controls."),
+                         tags$li(strong("5. Healthy Control Sample Columns:"), "Comma‑separated list of column names for your healthy (control) samples—used as the baseline for differential analysis."),
+                         tags$li(strong("6. Log2 Fold Change Threshold:"), "A numeric cutoff (e.g. 1) for |log₂(fold change)|; proteins exceeding this change are considered biologically meaningful."),
+                         tags$li(strong("7. Adjusted P‑Value Threshold:"), "A significance cutoff (e.g. 0.05) on the multiple‑testing corrected p‑values; proteins below this value are deemed statistically significant.")
+                       ),
+                       
+                       br(),
+                       
+                       # New section: How to use with sample file
+                       h3("How to use with sample file"),
+                       tags$ul(style = "list-style-position: inside; padding-left: 0; text-align: center;",
+                         tags$li(
+                           tags$div(
+                             style = "font-size:18px; font-weight:bold;",
+                             "1. Upload your sample file (or your own data) using the file upload box below:"
+                           ),
+                           tags$br(),
+                           tags$img(
+                             src   = "assets/UPLOAD_BOX.png",
+                             alt   = "File Upload Box",
+                             style = "width:30%; height:50%; border:1px solid #333;"
+                           ),
+                           tags$br()
+                         ),
+                         tags$br(),
+                         tags$li(
+                           tags$div(
+                             style = "font-size:18px; font-weight:bold;",
+                             '2. Identify and enter the protein‐name column. In the sample CSV it’s labeled "Accession", so type "Accession":'
+                           ),
+                           tags$br(),
+                           tags$img(
+                             src   = "assets/PROTEIN_COL.png",
+                             alt   = "Protein Column Input",
+                             style = "width:30%; height:50%; border:1px solid #333;"
+                           ),
+                           tags$br()
+                         ),
+                         tags$br(),
+                         tags$li(
+                           tags$div(
+                             style = "font-size:18px; font-weight:bold;",
+                             '3. Identify and enter the gene‐name column. In the sample CSV it’s labeled "Gene Name", so type "Gene Name":'
+                           ),
+                           tags$br(),
+                           tags$img(
+                             src   = "assets/GENE_COL.png",
+                             alt   = "Gene Column Input",
+                             style = "width:30%; height:50%; border:1px solid #333;"
+                           ),
+                           tags$br()
+                         ),
+                         tags$br(),
+                         tags$li(
+                           tags$div(
+                             style = "font-size:18px; font-weight:bold;",
+                             '4. Specify your sample and control columns. In the sample file, patients are "CI-1,CI-2,CI-3,CI-4" and controls are "HE-1,HE-2,HE-3,HE-4":'
+                           ),
+                           tags$br(),
+                           tags$img(
+                             src   = "assets/SAMPLE_COL.png",
+                             alt   = "Sample Column Input",
+                             style = "width:30%; height:50%; border:1px solid #333;"
+                           ),
+                           tags$br()
+                         ),
+                         tags$br(),
+                         tags$li(
+                           tags$div(
+                             style = "font-size:18px; font-weight:bold;",
+                             "5. Set your thresholds. For the sample run we recommend Log2 FC = 1 and Adjusted P‑value = 0.05:"
+                           ),
+                           tags$br(),
+                           tags$img(
+                             src   = "assets/ML_VALUES.png",
+                             alt   = "Threshold Values Input",
+                             style = "width:30%; height:50%; border:1px solid #333;"
+                           ),
+                           tags$br()
+                         ),
+                         tags$br(),
+                         tags$li(
+                           tags$div(
+                             style = "font-size:18px; font-weight:bold;",
+                             '6. Click **Start Analysis** and wait for the status to change from "Results not Ready" to "Ready" before exploring your outputs:'
+                           ),
+                           tags$br(),
+                           tags$img(
+                             src   = "assets/NOT_READY.png",
+                             alt   = "Not Ready Status",
+                             style = "max-width:45%; height:auto; margin-right:1em; border:1px solid #333;"
+                           ),
+                           tags$img(
+                             src   = "assets/READY.png",
+                             alt   = "Ready Status",
+                             style = "max-width:45%; height:auto; border:1px solid #333;"
+                           )
+                         )
+                       ),
+                       
+                       
+                      
+                       
+                       # Output fields explanation
+                       h3("Output Fields"),
+                       tags$ul(style = "list-style-position: inside; padding-left: 0; text-align: center; font-size: 18px",
+                         tags$li(strong("Volcano Plot:"), "Visualizes each protein’s log₂ fold change versus –log₁₀(adjusted p‑value). Up‑ and downregulated proteins are highlighted in red/blue."),
+                         tags$li(strong("Heatmap Plot:"), "Shows row‑scaled expression of significant proteins across all samples, clustered to reveal patterns of co‑expression."),
+                         tags$li(strong("Filtered Results Table:"), "Tabular list of proteins passing both your log₂ fold change and adjusted p‑value thresholds, with their numerical statistics and regulation status."),
+                         tags$li(strong("PubMed Article Links:"), "Clickable links to PubMed abstracts for each significant protein, aiding your literature exploration of protein–stroke associations."),
+                         tags$li(strong("Protein Interaction Map (All):"), "Network diagram from STRING‑DB showing known interactors for your significant proteins, including proteins not in your filtered list."),
+                         tags$li(strong("Protein Interaction Map (Significant Only):"), "Subnetwork focused solely on the significant proteins themselves, illustrating direct interactions within your filtered set.")
+                       )
+                       
+                   )  # end div(style="text-align:center;")
+                 )  # end fluidPage()
+        )  # end tabPanel("Usage")
+        
+        
+        
+      
       )
     }
   })
@@ -434,6 +582,20 @@ server <- function(input, output, session) {
   observeEvent(input$goToLogin, {
     login_attempt(TRUE)
   })
+  
+  # server.R (or inside server <- function(input, output, session) { … })
+  
+  output$download_sample_csv <- downloadHandler(
+    filename = function() {
+      "ProteinquantitationHE&CI.csv"
+    },
+    content = function(file) {
+      # assumes ProteinquantitationHE&CI.csv sits in your app directory
+      file.copy("ProteinquantitationHE&CI.csv", file)
+    },
+    contentType = "text/csv"
+  )
+  
   
   observeEvent(input$login, {
     user_result <- verifyLogin(input$username, input$password)
@@ -1338,7 +1500,7 @@ server <- function(input, output, session) {
         
         # Composite the legend image onto the transparent canvas using operator "over"
         legend_centered <- image_composite(canvas, legend_img, offset = offset, operator = "over")
-        
+         
         # Append the network image and the centered legend image vertically
         combined_img <- image_append(c(network_img, legend_centered), stack = TRUE)
         
