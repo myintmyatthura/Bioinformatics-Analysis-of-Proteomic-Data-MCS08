@@ -19,6 +19,7 @@ library(tinytex)
 library(kableExtra)
 library(readxl)
 library(magick)
+library(ggrepel)
 
 addResourcePath("assets", ".")
 
@@ -919,26 +920,40 @@ server <- function(input, output, session) {
     
   })
   
+  
+  
   output$volcanoPlot <- renderPlot({
     req(processedData())
     result <- processedData()$result
     
     ggplot(result, aes(
-      x = logFC,
-      y = -log10(adj.P.Val),
+      x     = logFC,
+      y     = -log10(adj.P.Val),
       color = Significance
     )) +
       geom_point(alpha = 0.7, size = 2) +
+      # only label the significant proteins to avoid clutter:
+      geom_text_repel(
+        data    = subset(result, Significance != "Not Significant"),
+        aes(label = Protein),
+        size    = 3,            # text size
+        max.overlaps = 10       # allow up to 10 overlaps before dropping labels
+      ) +
       scale_color_manual(
         values = c(
-          "Upregulated" = "red",
+          "Upregulated"   = "red",
           "Downregulated" = "blue",
           "Not Significant" = "gray"
         )
       ) +
       theme_minimal() +
-      labs(title = "Volcano Plot", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value")
+      labs(
+        title = "Volcano Plot",
+        x     = "Log2 Fold Change",
+        y     = "-Log10 Adjusted P‑Value"
+      )
   })
+  
   
   output$heatmapPlot <- renderPlot({
     req(processedData())
@@ -1450,28 +1465,40 @@ server <- function(input, output, session) {
   
   output$download_volcano <- downloadHandler(
     filename = function() {
-      paste("volcano_plot", Sys.Date(), ".png", sep = "")
+      paste0("volcano_plot_", Sys.Date(), ".png")
     },
     content = function(file) {
       png(file, width = 1000, height = 800)
       result <- processedData()$result
-      print(
-        ggplot(result, aes(
-          x = logFC,
-          y = -log10(adj.P.Val),
-          color = Significance
-        )) +
-          geom_point(alpha = 0.7, size = 2) +
-          scale_color_manual(
-            values = c(
-              "Upregulated" = "red",
-              "Downregulated" = "blue",
-              "Not Significant" = "gray"
-            )
-          ) +
-          theme_minimal() +
-          labs(title = "Volcano Plot", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value")
-      )
+      
+      p <- ggplot(result, aes(
+        x     = logFC,
+        y     = -log10(adj.P.Val),
+        color = Significance
+      )) +
+        geom_point(alpha = 0.7, size = 2) +
+        # label only the Up/Down‑regulated points
+        geom_text_repel(
+          data    = subset(result, Significance != "Not Significant"),
+          aes(label = Protein),
+          size    = 3,
+          max.overlaps = 10
+        ) +
+        scale_color_manual(
+          values = c(
+            "Upregulated"     = "red",
+            "Downregulated"   = "blue",
+            "Not Significant" = "gray"
+          )
+        ) +
+        theme_minimal() +
+        labs(
+          title = "Volcano Plot",
+          x     = "Log2 Fold Change",
+          y     = "-Log10 Adjusted P‑Value"
+        )
+      
+      print(p)
       dev.off()
     }
   )
@@ -1532,27 +1559,39 @@ server <- function(input, output, session) {
       paste("Proteomic_Report_", Sys.Date(), ".pdf", sep = "")
     },
     content = function(file) {
-      # Save volcano plot to PNG
+      # ---- Volcano Plot PNG ----
       volcano_path <- tempfile(fileext = ".png")
       png(volcano_path, width = 1000, height = 800)
       result <- processedData()$result
-      print(
-        ggplot(result, aes(
-          x = logFC,
-          y = -log10(adj.P.Val),
-          color = Significance
-        )) +
-          geom_point(alpha = 0.7, size = 2) +
-          scale_color_manual(
-            values = c(
-              "Upregulated" = "red",
-              "Downregulated" = "blue",
-              "Not Significant" = "gray"
-            )
-          ) +
-          theme_minimal() +
-          labs(title = "Volcano Plot", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value")
-      )
+      
+      p_volcano <- ggplot(result, aes(
+        x     = logFC,
+        y     = -log10(adj.P.Val),
+        color = Significance
+      )) +
+        geom_point(alpha = 0.7, size = 2) +
+        # label significant points
+        geom_text_repel(
+          data    = subset(result, Significance != "Not Significant"),
+          aes(label = Protein),
+          size        = 3,
+          max.overlaps = 10
+        ) +
+        scale_color_manual(
+          values = c(
+            "Upregulated"     = "red",
+            "Downregulated"   = "blue",
+            "Not Significant" = "gray"
+          )
+        ) +
+        theme_minimal() +
+        labs(
+          title = "Volcano Plot",
+          x     = "Log2 Fold Change",
+          y     = "-Log10 Adjusted P‑Value"
+        )
+      
+      print(p_volcano)
       dev.off()
       
       # Save heatmap plot to PNG
@@ -1597,7 +1636,7 @@ server <- function(input, output, session) {
         network_img <- image_read(string_url)
         
         # Read the local legend image (adjust path if needed)
-        legend_img <- image_read("PROTEIN_LEGENDS.PNG")
+        legend_img <- image_read("images/PROTEIN_LEGENDS.PNG")
         
         # Get the width of the network image
         network_info <- image_info(network_img)
