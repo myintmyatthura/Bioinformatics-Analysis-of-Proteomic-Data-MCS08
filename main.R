@@ -184,10 +184,15 @@ server <- function(input, output, session) {
         )
       }
     } else {
-      navbarPage(
-        "Protein Quantitation Analysis",
+      navbarPage(  id = "main_nav",                      # give the navbarPage an id
+                   title = "Protein Quantitation Analysis",
         tabPanel("Analysis", sidebarLayout(
           sidebarPanel(
+            actionLink(
+              inputId = "help_link",
+              label   = "If you are unsure about how to use this application, navigate to the Usage page using this link."
+            ),
+            br(), br(),
             textOutput("status_message", inline = TRUE),
             br(),
             fileInput("file", "Upload CSV or Excel", accept = c(".csv", ".xlsx")),
@@ -347,7 +352,7 @@ server <- function(input, output, session) {
             p("Dr. John Doe, Dr. Jane Smith, Alex Johnson.", style = "text-align: center;")
           )
         )),
-        tabPanel("Usage",
+        tabPanel(title = "Usage", value = "usage",
                  fluidPage(
                    div(style = "text-align: center;",
                        
@@ -1543,7 +1548,9 @@ server <- function(input, output, session) {
       write.csv(sig_results, file, row.names = FALSE)
     }
   )
-  
+  observeEvent(input$help_link, {
+    updateNavbarPage(session, "main_nav", selected = "usage")
+  })
   
   output$download_table <- downloadHandler(
     filename = function() {
