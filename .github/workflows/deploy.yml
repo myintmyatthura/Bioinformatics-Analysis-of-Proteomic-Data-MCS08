@@ -24,3 +24,4 @@ jobs:
             git pull origin main  # Pull latest code
             Rscript deploy.R # install dependencies
             sudo systemctl restart shiny-server  # Restart server
+        timeout-minutes: 30
