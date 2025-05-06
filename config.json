@@ -1,0 +1,9 @@
+{
+  "db": {
+    "host": "fyp-bioinformatics-database.c14ksgieq07r.ap-southeast-1.rds.amazonaws.com",
+    "port": 5432,
+    "dbname": "postgres",
+    "user": "postgres",
+    "password": "proteomic.online"
+  }
+}
