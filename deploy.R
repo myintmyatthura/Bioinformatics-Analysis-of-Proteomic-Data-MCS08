@@ -10,7 +10,7 @@ if (!"BiocManager" %in% installed.packages()[,"Package"]) {
   install.packages("BiocManager", repos = "https://cran.rstudio.com/")
 }
 required_packages <- c("shiny", "ggplot2", "dplyr", "testthat", "shinythemes",
-                       "pheatmap", "RColorBrewer", "httr", "jsonlite", "RPostgres",
+                       "pheatmap", "RColorBrewer", "httr", "jsonlite", "RPostgres","aws.s3", "DT",
                        "pool", "DBI", "tinytex", "rmarkdown", "knitr","kableExtra","readxl","magick","ggrepel")
 bioc_packages <- c("limma")
 
