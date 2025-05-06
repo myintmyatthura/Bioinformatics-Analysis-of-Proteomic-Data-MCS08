@@ -21,7 +21,8 @@ jobs:
           key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
           script: |
             cd /srv/shiny-server/Bioinformatics-Analysis-of-Proteomic-Data-MCS08
-            git config --global pull.ff only
+            git fetch origin
+            git reset --hard origin/main
             Rscript deploy.R # install dependencies
             sudo systemctl restart shiny-server  # Restart server
         timeout-minutes: 30
