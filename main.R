@@ -230,6 +230,18 @@ server <- function(input, output, session) {
               "Enter Adjusted P-Value Threshold (eg: 0.05):",
               ""
             ),
+            
+            checkboxInput("preprocess_ig", "Preprocess to remove Immunoglobulin proteins", value = FALSE),
+            
+            conditionalPanel(
+              condition = "input.preprocess_ig == true",
+              textInput("protein_desc_column", 
+                        label = HTML('Enter Protein Description Column 
+                           <span title="Used to filter out immunoglobulin-related proteins. This column should contain protein descriptions.">
+                             &#9432;
+                           </span>'),
+                        value = "")
+            ),
             actionButton("start_analysis", "Start Analysis"),
             textOutput("processingMessage", inline = TRUE),
             br(),
