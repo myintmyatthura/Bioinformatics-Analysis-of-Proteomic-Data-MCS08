@@ -894,7 +894,7 @@ server <- function(input, output, session) {
     req(
       input$file,
       input$protein_columns,
-      input$gene_columns,
+      # input$gene_columns,
       input$ci_columns,
       input$he_columns,
       input$log2_threshold,
@@ -903,15 +903,18 @@ server <- function(input, output, session) {
     log2_threshold <- as.numeric(input$log2_threshold)
     pval_threshold <- as.numeric(input$pval_threshold)
     data <- dataset()
-    data <- data[!grepl("immunoglobulin", data$ProteinDescriptions, ignore.case = TRUE), ]
-    
-    
+    if (input$preprocess_ig && input$protein_desc_column != "") {
+      desc_col <- input$protein_desc_column
+      if (desc_col %in% colnames(data)) {
+        data <- data[!grepl("immunoglobulin", data[[desc_col]], ignore.case = TRUE), ]
+      } else {
+        showNotification("Protein description column not found.", type = "error")
+      }
+    }
     ci_cols <- strsplit(input$ci_columns, ",")[[1]]
     he_cols <- strsplit(input$he_columns, ",")[[1]]
     ci_cols <- trimws(ci_cols)
     he_cols <- trimws(he_cols)
-    
-    
     
     if (!all(ci_cols %in% colnames(data)) ||
         !all(he_cols %in% colnames(data))) {
@@ -955,10 +958,16 @@ server <- function(input, output, session) {
     result$Protein <- rownames(result)
     gene_col <- input$gene_columns
     
-    
-    result$Gene <- data[rownames(result), gene_col]
-    
-    result <- result[, c("Protein", "Gene", setdiff(colnames(result), c("Protein", "Gene")))]
+    if (!is.null(gene_col) && gene_col != "" && gene_col %in% colnames(data)) {
+      # Add Gene column to result
+      result$Gene <- data[rownames(result), gene_col]
+      
+      # Reorder columns: Protein, Gene, rest
+      result <- result[, c("Protein", "Gene", setdiff(colnames(result), c("Protein", "Gene")))]
+    } else {
+      # Just include Protein and rest
+      result <- result[, c("Protein", setdiff(colnames(result), c("Protein")))]
+    }
     
     result$Significance <- ifelse(
       result$adj.P.Val < pval_threshold &
@@ -1046,7 +1055,8 @@ server <- function(input, output, session) {
         "1",
         "1.5 (Strongly Up)"
       ),
-      main = "logFC Heatmap with Clustering"
+      main = "logFC Heatmap with Clustering",
+      fontsize_col = 8
     )
     
   })
