@@ -270,7 +270,7 @@ server <- function(input, output, session) {
                   h4("Volcano Plot"),
                   p("The volcano plot visualizes..."),
                   plotOutput("volcanoPlot"),
-                  downloadButton("download_volcano", "Download Volcano Plot (PNG)")
+                  downloadButton("download_volcano", "Download Volcano Plot (png)")
                 )
               }
             }),
@@ -284,7 +284,7 @@ server <- function(input, output, session) {
                   h4("Heatmap Plot"),
                   p("The heatmap represents..."),
                   plotOutput("heatmapPlot"),
-                  downloadButton("download_heatmap", "Download Heatmap Plot (PNG)")
+                  downloadButton("download_heatmap", "Download Heatmap Plot (png)")
                 )
               }
             }),
@@ -323,7 +323,7 @@ server <- function(input, output, session) {
                   h4("Protein2 Mapping"),
                   p("This generates a protein interaction network..."),
                   uiOutput("protein2Mapping"),
-                  downloadButton("download_protein2", "Download Protein Interaction Map (PNG)")
+                  downloadButton("download_protein2", "Download Protein Interaction Map (png)")
                 )
               }
             })
@@ -506,7 +506,7 @@ server <- function(input, output, session) {
                            tags$br(),
                            tags$br(),
                            tags$img(
-                             src   = "assets/images/TOGGLE_BUTTON.PNG",
+                             src   = "assets/images/TOGGLE_BUTTON.png",
                              alt   = "Toggle Buttons",
                              style = "width:30%; height:50%; border:1px solid #333;"
                            ),
@@ -516,12 +516,12 @@ server <- function(input, output, session) {
                          
                          # Volcano Plot
                          tags$li(
-                           strong("2. Volcano Plot (Downloadable in PNG):"),
+                           strong("2. Volcano Plot (Downloadable in png):"),
                            "Visualizes each protein’s log₂ fold change versus –log₁₀(adjusted p‑value). Up‑ and downregulated proteins are highlighted in red/blue",
                            tags$br(),
                            tags$br(),
                            tags$img(
-                             src   = "assets/images/VOLCANO_PLOT.PNG",
+                             src   = "assets/images/VOLCANO_PLOT.png",
                              alt   = "Volcano Plot",
                              style = "width:30%; height:50%; border:1px solid #333;"
                            ),
@@ -531,12 +531,12 @@ server <- function(input, output, session) {
                          
                          # Heatmap Plot
                          tags$li(
-                           strong("3. Heatmap Plot (Downloadable in PNG):"),
+                           strong("3. Heatmap Plot (Downloadable in png):"),
                            "Shows row‑scaled expression of significant proteins across all samples, clustered to reveal patterns of co‑expression.",
                            tags$br(),
                            tags$br(),
                            tags$img(
-                             src   = "assets/images/HEATMAP_PLOT.PNG",
+                             src   = "assets/images/HEATMAP_PLOT.png",
                              alt   = "Heatmap Plot",
                              style = "width:30%; height:50%; border:1px solid #333;"
                            ),
@@ -551,7 +551,7 @@ server <- function(input, output, session) {
                            tags$br(),
                            tags$br(),
                            tags$img(
-                             src   = "assets/images/FILTERED_TABLE.PNG",
+                             src   = "assets/images/FILTERED_TABLE.png",
                              alt   = "Filtered Results Table",
                              style = "width:30%; height:50%; border:1px solid #333;"
                            ),
@@ -566,7 +566,7 @@ server <- function(input, output, session) {
                            tags$br(),
                            tags$br(),
                            tags$img(
-                             src   = "assets/images/PUBMED_ARTICLES.PNG",
+                             src   = "assets/images/PUBMED_ARTICLES.png",
                              alt   = "PubMed Links",
                              style = "width:30%; height:50%; border:1px solid #333;"
                            ),
@@ -581,7 +581,7 @@ server <- function(input, output, session) {
                            tags$br(),
                            tags$br(),
                            tags$img(
-                             src   = "assets/images/POPUP_MODAL.PNG",
+                             src   = "assets/images/POPUP_MODAL.png",
                              alt   = "Popup Modal",
                              style = "width:30%; height:50%; border:1px solid #333;"
                            ),
@@ -591,12 +591,12 @@ server <- function(input, output, session) {
                          
                          # Protein Interaction Map
                          tags$li(
-                           strong("7. Protein Interaction Map (PNG):"),
+                           strong("7. Protein Interaction Map (png):"),
                            "Subnetwork focused solely on the significant proteins themselves, illustrating direct interactions within your filtered set.",
                            tags$br(),
                            tags$br(),
                            tags$img(
-                             src   = "assets/images/PROTEIN_INTERACTION.PNG",
+                             src   = "assets/images/PROTEIN_INTERACTION.png",
                              alt   = "Protein Interaction Map",
                              style = "width:30%; height:50%; border:1px solid #333;"
                            ),
@@ -611,7 +611,7 @@ server <- function(input, output, session) {
                            tags$br(),
                            tags$br(),
                            tags$img(
-                             src   = "assets/images/DOWNLOAD_REPORT.PNG",
+                             src   = "assets/images/DOWNLOAD_REPORT.png",
                              alt   = "Download Report Button",
                              style = "width:30%; height:50%; border:1px solid #333;"
                            ),
@@ -1497,7 +1497,7 @@ server <- function(input, output, session) {
         tags$img(src = string_url, style = "width: 100%; height: auto; max-width: 1200px;"),
         tags$br(), tags$br(),
         tags$img(
-          src = "assets/images/PROTEIN_LEGENDS.PNG",
+          src = "assets/images/PROTEIN_LEGENDS.",
           style = "display: block; margin-left: auto; margin-right: auto; width: 50%; height: auto;"
         )
         
@@ -1532,7 +1532,7 @@ server <- function(input, output, session) {
         network_img <- image_read(string_url)
         
         # Read the local legend image (ensure the file is in the working directory or accessible via correct path)
-        legend_img <- image_read("images/PROTEIN_LEGENDS.PNG")
+        legend_img <- image_read("images/PROTEIN_LEGENDS.png")
         
         # Get the width of the network image
         network_info <- image_info(network_img)
@@ -1559,7 +1559,7 @@ server <- function(input, output, session) {
         # Append the network image and the centered legend image vertically
         combined_img <- image_append(c(network_img, legend_centered), stack = TRUE)
         
-        # Write the combined image as a PNG file, preserving transparency
+        # Write the combined image as a png file, preserving transparency
         image_write(combined_img, path = file, format = "png")
       } else {
         # If no significant proteins are found, generate a blank image with a message
@@ -1675,7 +1675,7 @@ server <- function(input, output, session) {
       paste("Proteomic_Report_", Sys.Date(), ".pdf", sep = "")
     },
     content = function(file) {
-      # ---- Volcano Plot PNG ----
+      # ---- Volcano Plot png ----
       volcano_path <- tempfile(fileext = ".png")
       png(volcano_path, width = 1000, height = 800)
       result <- processedData()$result
@@ -1710,7 +1710,7 @@ server <- function(input, output, session) {
       print(p_volcano)
       dev.off()
       
-      # Save heatmap plot to PNG
+      # Save heatmap plot to png
       heatmap_path <- tempfile(fileext = ".png")
       png(heatmap_path, width = 1000, height = 800)
       significant_proteins <- processedData()$significant_proteins
@@ -1736,7 +1736,7 @@ server <- function(input, output, session) {
       )
       dev.off()
       
-      # Save Protein2 Mapping plot to PNG (combine network image & legend using magick)
+      # Save Protein2 Mapping plot to png (combine network image & legend using magick)
       protein2_path <- tempfile(fileext = ".png")
       sig_proteins <- processedData()$significant_proteins
       if (nrow(sig_proteins) > 0) {
@@ -1752,7 +1752,7 @@ server <- function(input, output, session) {
         network_img <- image_read(string_url)
         
         # Read the local legend image (adjust path if needed)
-        legend_img <- image_read("images/PROTEIN_LEGENDS.PNG")
+        legend_img <- image_read("images/PROTEIN_LEGENDS.png")
         
         # Get the width of the network image
         network_info <- image_info(network_img)
@@ -1782,7 +1782,7 @@ server <- function(input, output, session) {
         # Scale the combined image up by 40% (i.e. 140% of its original size)
         combined_img <- image_scale(combined_img, "140%")
         
-        # Write the combined image as a PNG file, preserving transparency
+        # Write the combined image as a png file, preserving transparency
         image_write(combined_img, path = protein2_path, format = "png")
         
       } else {
