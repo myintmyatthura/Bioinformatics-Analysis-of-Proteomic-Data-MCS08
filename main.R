@@ -296,7 +296,13 @@ server <- function(input, output, session) {
                   style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
                   h4("Filtered Results Table"),
                   p("This table lists proteins..."),
-                  tableOutput("filteredResults"),
+                  
+                  # Scrollable div
+                  div(
+                    style = "overflow-x: auto;",
+                    DTOutput("filteredResults")
+                  ),
+                  
                   actionButton("show_less", "Show Significant Proteins"),
                   actionButton("show_more", "Show All Proteins"),
                   br(),
@@ -304,7 +310,8 @@ server <- function(input, output, session) {
                   downloadButton("download_table", "Download Table For All Proteins (CSV)")
                 )
               }
-            }),
+            })
+            ,
             
             output$pubmedUI_wrapper <- renderUI({
               if (plot_visibility$pubmed) {
@@ -1104,9 +1111,19 @@ server <- function(input, output, session) {
     
   })
   
-  output$filteredResults <- renderTable({
+  output$filteredResults <- renderDT({
     req(tableData())
-    tableData()
+    datatable(
+      tableData(),
+      options = list(
+        pageLength = 20,
+        scrollX = TRUE,      # Enables horizontal scroll
+        dom = 'Bfrtip',      # Adds button controls
+        buttons = c('colvis')
+      ),
+      extensions = 'Buttons',
+      rownames = FALSE
+    )
   })
   
   
