@@ -98,6 +98,14 @@ server <- function(input, output, session) {
   pubmedLinks <- reactiveVal(NULL)
   pubMessage <- reactiveVal("Not ready!")
   
+  plot_visibility <- reactiveValues(
+    volcano = FALSE,
+    heatmap = FALSE,
+    table = FALSE,
+    pubmed = FALSE,
+    protein2 = FALSE
+  )
+  
   user_session_data <- reactiveVal(NULL)
   
   output$status_message <- renderText({
@@ -212,12 +220,12 @@ server <- function(input, output, session) {
             ),
             textInput(
               "ci_columns",
-              "Enter Patient Sample Columns (comma-separated):",
+              "Enter Group 1 Sample Columns (comma-separated):",
               ""
             ),
             textInput(
               "he_columns",
-              "Enter Healthy Control Sample Columns (comma-separated):",
+              "Enter Group 2 Sample Columns (comma-separated):",
               ""
             ),
             textInput(
@@ -251,90 +259,74 @@ server <- function(input, output, session) {
           ,
           mainPanel(
             uiOutput("buttons"),
-            
             br(),
             br(),
             
             # Volcano Plot Section
-            conditionalPanel(
-              condition = "input.toggle_volcano % 2 == 1",
-              div(
-                style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                h4("Volcano Plot"),
-                p(
-                  "The volcano plot visualizes the relationship between the log fold change and adjusted p-value of proteins.
-           Points in red indicate significantly upregulated proteins, while points in blue indicate significantly downregulated proteins.
-           Gray points are not significant."
-                ),
-                plotOutput("volcanoPlot"),
-                downloadButton("download_volcano", "Download Volcano Plot (PNG)")
-                
-                
-              )
-            ),
+            output$volcanoUI <- renderUI({
+              if (plot_visibility$volcano) {
+                div(
+                  style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                  h4("Volcano Plot"),
+                  p("The volcano plot visualizes..."),
+                  plotOutput("volcanoPlot"),
+                  downloadButton("download_volcano", "Download Volcano Plot (PNG)")
+                )
+              }
+            }),
+            
             
             # Heatmap Section
-            conditionalPanel(
-              condition = "input.toggle_heatmap % 2 == 1",
-              div(
-                style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                h4("Heatmap Plot"),
-                p(
-                  "The heatmap represents the expression levels of significantly different proteins.
-           Red indicates higher expression, blue indicates lower expression, and clustering shows relationships among proteins."
-                ),
-                plotOutput("heatmapPlot"),
-                downloadButton("download_heatmap", "Download Heatmap Plot (PNG)")
-                
-              )
-            ),
-            
-            # Filtered Table Section
-            conditionalPanel(
-              condition = "input.toggle_table % 2 == 1",
-              div(
-                style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                h4("Filtered Results Table"),
-                p(
-                  "This table lists proteins that are significantly different between conditions based on the specified thresholds.
-           It includes log fold change, adjusted p-values, and classification as upregulated, downregulated, or not significant."
-                ),
-                tableOutput("filteredResults"),
-                actionButton("show_less", "Show Significant Proteins"),
-                actionButton("show_more", "Show All Proteins"),
-                
-                br(),
-                downloadButton("download_table_significant", "Download Table Significant Proteins (CSV)"),
-                downloadButton("download_table", "Download Table For All Proteins (CSV)"),
-                
-                
-              )
-            ),
-            
-            conditionalPanel(
-              condition = "input.fetch_pubmed % 2 == 1",
-              div(
-                style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                h4("PubMed Article Links"),
-                p(
-                  "Below are links to PubMed articles related to studying the correlation between each significant protein and strokes."
-                ),
-                uiOutput("pubmedUI")
-              )
-            ),
-            conditionalPanel(
-              condition = "input.toggle_protein2 % 2 == 1",
-              div(
-                style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                h4("Protein2 Mapping"),
-                p("This generates a protein interaction network image from STRING DB based on the significant proteins obtained from the analysis."),
-                uiOutput("protein2Mapping"),
-                downloadButton("download_protein2", "Download Protein Interaction Map (PNG)")
-              )
-            )
+            output$heatmapUI <- renderUI({
+              if (plot_visibility$heatmap) {
+                div(
+                  style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                  h4("Heatmap Plot"),
+                  p("The heatmap represents..."),
+                  plotOutput("heatmapPlot"),
+                  downloadButton("download_heatmap", "Download Heatmap Plot (PNG)")
+                )
+              }
+            }),
             
             
+            output$tableUI <- renderUI({
+              if (plot_visibility$table) {
+                div(
+                  style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                  h4("Filtered Results Table"),
+                  p("This table lists proteins..."),
+                  tableOutput("filteredResults"),
+                  actionButton("show_less", "Show Significant Proteins"),
+                  actionButton("show_more", "Show All Proteins"),
+                  br(),
+                  downloadButton("download_table_significant", "Download Table Significant Proteins (CSV)"),
+                  downloadButton("download_table", "Download Table For All Proteins (CSV)")
+                )
+              }
+            }),
             
+            output$pubmedUI_wrapper <- renderUI({
+              if (plot_visibility$pubmed) {
+                div(
+                  style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                  h4("PubMed Article Links"),
+                  p("Below are links to PubMed articles..."),
+                  uiOutput("pubmedUI")
+                )
+              }
+            }),
+            output$protein2UI <- renderUI({
+              if (plot_visibility$protein2) {
+                div(
+                  style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                  h4("Protein2 Mapping"),
+                  p("This generates a protein interaction network..."),
+                  uiOutput("protein2Mapping"),
+                  downloadButton("download_protein2", "Download Protein Interaction Map (PNG)")
+                )
+              }
+            })
             
           )
           
@@ -714,11 +706,47 @@ server <- function(input, output, session) {
           "color: black; width: 150px; height: 40px;"
         ),
         disabled = is_disabled
+      ),
+      actionButton(
+        "showAll",
+        "Show All",
+        style = paste(
+          "background-color:", btn_color, " !important;",
+          "border-color:", btn_color, " !important;",
+          "color: black; width: 150px; height: 40px;"
+        ),
+        disabled = is_disabled
       )
     )
   })
   
+  observeEvent(input$toggle_volcano, {
+    plot_visibility$volcano <- !plot_visibility$volcano
+  })
   
+  observeEvent(input$toggle_heatmap, {
+    plot_visibility$heatmap <- !plot_visibility$heatmap
+  })
+  
+  observeEvent(input$toggle_table, {
+    plot_visibility$table <- !plot_visibility$table
+  })
+  
+  observeEvent(input$fetch_pubmed, {
+    plot_visibility$pubmed <- !plot_visibility$pubmed
+  })
+  
+  observeEvent(input$toggle_protein2, {
+    plot_visibility$protein2 <- !plot_visibility$protein2
+  })
+  
+  observeEvent(input$showAll, {
+    plot_visibility$volcano <- !plot_visibility$volcano
+    plot_visibility$heatmap <- !plot_visibility$heatmap
+    plot_visibility$table <- !plot_visibility$table
+    plot_visibility$pubmed <- !plot_visibility$pubmed
+    plot_visibility$protein2 <- !plot_visibility$protein2
+  })
   
   observeEvent(input$goToLogin, {
     login_attempt(TRUE)
@@ -1262,9 +1290,6 @@ server <- function(input, output, session) {
       })
     )
   })
-  
-  
-  
   
   
   
