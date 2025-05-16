@@ -244,7 +244,7 @@ server <- function(input, output, session) {
             conditionalPanel(
               condition = "input.preprocess_ig == true",
               textInput("protein_desc_column", 
-                        label = HTML('Enter Protein Description Column 
+                        label = HTML('Enter Protein Description Column Name
                            <span title="Used to filter out immunoglobulin-related proteins. This column should contain protein descriptions.">
                              &#9432;
                            </span>'),
@@ -389,7 +389,8 @@ server <- function(input, output, session) {
                                tags$li(strong("4. Patient Sample Columns:"), "Comma‑separated list of column names corresponding to patient (case) samples—these values will be compared to controls."),
                                tags$li(strong("5. Healthy Control Sample Columns:"), "Comma‑separated list of column names for your healthy (control) samples—used as the baseline for differential analysis."),
                                tags$li(strong("6. Log2 Fold Change Threshold:"), "A numeric cutoff (e.g. 1) for |log₂(fold change)|; proteins exceeding this change are considered biologically meaningful."),
-                               tags$li(strong("7. Adjusted P‑Value Threshold:"), "A significance cutoff (e.g. 0.05) on the multiple‑testing corrected p‑values; proteins below this value are deemed statistically significant.")
+                               tags$li(strong("7. Adjusted P‑Value Threshold:"), "A significance cutoff (e.g. 0.05) on the multiple‑testing corrected p‑values; proteins below this value are deemed statistically significant."),
+                               tags$li(strong("8. Protein Data Preprocessing:"), "Choose whether to filter your protein expression data before analysis. Option include filtering out immunoglobulin proteins.")
                        ),
                        
                        br(),
@@ -949,6 +950,7 @@ server <- function(input, output, session) {
         data <- data[!grepl("immunoglobulin", data[[desc_col]], ignore.case = TRUE), ]
       } else {
         showNotification("Protein description column not found.", type = "error")
+        return(NULL)
       }
     }
     ci_cols <- strsplit(input$ci_columns, ",")[[1]]
@@ -1023,7 +1025,8 @@ server <- function(input, output, session) {
     significant_proteins <- subset(result, Significance != "Not Significant")
     statusMessage("Analysis complete!")
     processingMessage("Done!")
-    tableData(head(result, 20))
+    initial <- result[result$Significance != "Not Significant", ]
+    tableData(initial)
     list(
       normalized_matrix = normalized_matrix,
       result = result,
@@ -1102,9 +1105,8 @@ server <- function(input, output, session) {
   })
   
   output$filteredResults <- renderTable({
-    req(processedData())
-    significant_results <- processedData()$result[processedData()$result$Significance != "Not Significant", ]
-    significant_results
+    req(tableData())
+    tableData()
   })
   
   
@@ -1802,7 +1804,7 @@ server <- function(input, output, session) {
           volcano_path = volcano_path,
           heatmap_path = heatmap_path,
           protein2_path = protein2_path,
-          result_table = processedData()$result[processedData()$result$Significance != "Not Significant", ],
+          result_table = processedData()$result[processedData()$result$S -ignificance != "Not Significant", ],
           username = input$username  # Ensure this variable holds the current username if needed
         ),
         envir = new.env(parent = globalenv())
