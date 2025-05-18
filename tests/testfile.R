@@ -5,7 +5,7 @@
 # and high‑level end‑to‑end UI tests (black‑box) for the entire
 # proteomics‑analysis Shiny application.
 #
-# ▸ To run everything:  devtools::test()   (in the app root)
+# ▸ To run everything:  testthat::test_file("tests/testfile.R")   (in the app root)
 # ▸ To view coverage:   covr::file_coverage("main.R", "tests/testfile.R")
 # =============================================================
 
