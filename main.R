@@ -130,7 +130,7 @@ server <- function(input, output, session) {
   output$dynamicUI <- renderUI({
     if (!login_attempt()) {
       fluidPage(
-
+        
         
         titlePanel(
           div("Proteomic Data Analysis Software", style = "text-align: center; font-size: 32px; font-weight: bold;")
@@ -197,467 +197,467 @@ server <- function(input, output, session) {
         )
       }
     } else {
-
+      
       tagList( useShinyjs(), navbarPage(  id = "main_nav",                      # give the navbarPage an id
-                   title = "Protein Quantitation Analysis",
-                   tabPanel("Analysis", sidebarLayout(
-                     sidebarPanel(
-                       actionLink(
-                         inputId = "help_link",
-                         label   = "If you are unsure about how to use this application, navigate to the Usage page using this link."
-                       ),
-                       br(), br(),
-                       textOutput("status_message", inline = TRUE),
-                       br(),
-                       fileInput("file", "Upload CSV or Excel", accept = c(".csv", ".xlsx")),
-                       
-                       verbatimTextOutput("fileInfo"),
-                       textInput(
-                         "protein_columns",
-                         "Enter Protein Name columns (eg: 'Protein Name')",
-                         ""
-                       ),
-                       textInput(
-                         "gene_columns",
-                         "Enter Gene Name columns (eg: 'Gene Name')",
-                         ""
-                       ),
-                       textInput(
-                         "ci_columns",
-                         "Enter Group 1 Sample Columns (comma-separated):",
-                         ""
-                       ),
-                       textInput(
-                         "he_columns",
-                         "Enter Group 2 Sample Columns (comma-separated):",
-                         ""
-                       ),
-                       textInput(
-                         "log2_threshold",
-                         "Enter Log2 Fold Change Threshold (eg: 1):",
-                         ""
-                       ),
-                       textInput(
-                         "pval_threshold",
-                         "Enter Adjusted P-Value Threshold (eg: 0.05):",
-                         ""
-                       ),
-                       
-                       checkboxInput("preprocess_ig", "Preprocess to remove Immunoglobulin proteins", value = FALSE),
-                       
-                       conditionalPanel(
-                         condition = "input.preprocess_ig == true",
-                         textInput("protein_desc_column", 
-                                   label = HTML('Enter Protein Description Column Name
+                                          title = "Protein Quantitation Analysis",
+                                          tabPanel("Analysis", sidebarLayout(
+                                            sidebarPanel(
+                                              actionLink(
+                                                inputId = "help_link",
+                                                label   = "If you are unsure about how to use this application, navigate to the Usage page using this link."
+                                              ),
+                                              br(), br(),
+                                              textOutput("status_message", inline = TRUE),
+                                              br(),
+                                              fileInput("file", "Upload CSV or Excel", accept = c(".csv", ".xlsx")),
+                                              
+                                              verbatimTextOutput("fileInfo"),
+                                              textInput(
+                                                "protein_columns",
+                                                "Enter Protein Name columns (eg: 'Protein Name')",
+                                                ""
+                                              ),
+                                              textInput(
+                                                "gene_columns",
+                                                "Enter Gene Name columns (eg: 'Gene Name')",
+                                                ""
+                                              ),
+                                              textInput(
+                                                "ci_columns",
+                                                "Enter Group 1 Sample Columns (comma-separated):",
+                                                ""
+                                              ),
+                                              textInput(
+                                                "he_columns",
+                                                "Enter Group 2 Sample Columns (comma-separated):",
+                                                ""
+                                              ),
+                                              textInput(
+                                                "log2_threshold",
+                                                "Enter Log2 Fold Change Threshold (eg: 1):",
+                                                ""
+                                              ),
+                                              textInput(
+                                                "pval_threshold",
+                                                "Enter Adjusted P-Value Threshold (eg: 0.05):",
+                                                ""
+                                              ),
+                                              
+                                              checkboxInput("preprocess_ig", "Preprocess to remove Immunoglobulin proteins", value = FALSE),
+                                              
+                                              conditionalPanel(
+                                                condition = "input.preprocess_ig == true",
+                                                textInput("protein_desc_column", 
+                                                          label = HTML('Enter Protein Description Column Name
                            <span title="Used to filter out immunoglobulin-related proteins. This column should contain protein descriptions.">
                              &#9432;
                            </span>'),
-                                   value = "")
-                       ),
-                       actionButton("start_analysis", "Start Analysis"),
-                       textOutput("processingMessage", inline = TRUE),
-                       br(),
-                       br(),
-                       downloadButton("download_report", "Download Full Report (PDF)")
-                     )
-                     ,
-                     mainPanel(
-                       uiOutput("buttons"),
-                       # checkboxInput("show_all", "Show/Hide All Panels", FALSE),
-                       # checkboxInput("panel1_on", "Volcano Plot", FALSE),
-                       # checkboxInput("panel2_on", "Heatmap Plot", FALSE),
-                       # checkboxInput("panel3_on", "Protein Table", FALSE),
-                       # checkboxInput("panel4_on", "Pubmed Links", FALSE),
-                       # checkboxInput("panel5_on", "Protein Interaction Map", FALSE),
-                       br(),
-                       br(),
-                       
-                       conditionalPanel(
-                         condition = "input.show_all || input.panel1_on",
-                         div( id = "volcano_section",
-                           style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                           h4("Volcano Plot"),
-                           p(
-                             "The volcano plot visualizes the relationship between the log fold change and adjusted p-value of proteins.
+                                                          value = "")
+                                              ),
+                                              actionButton("start_analysis", "Start Analysis"),
+                                              textOutput("processingMessage", inline = TRUE),
+                                              br(),
+                                              br(),
+                                              downloadButton("download_report", "Download Full Report (PDF)")
+                                            )
+                                            ,
+                                            mainPanel(
+                                              uiOutput("buttons"),
+                                              # checkboxInput("show_all", "Show/Hide All Panels", FALSE),
+                                              # checkboxInput("panel1_on", "Volcano Plot", FALSE),
+                                              # checkboxInput("panel2_on", "Heatmap Plot", FALSE),
+                                              # checkboxInput("panel3_on", "Protein Table", FALSE),
+                                              # checkboxInput("panel4_on", "Pubmed Links", FALSE),
+                                              # checkboxInput("panel5_on", "Protein Interaction Map", FALSE),
+                                              br(),
+                                              br(),
+                                              
+                                              conditionalPanel(
+                                                condition = "input.show_all || input.panel1_on",
+                                                div( id = "volcano_section",
+                                                     style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                                                     h4("Volcano Plot"),
+                                                     p(
+                                                       "The volcano plot visualizes the relationship between the log fold change and adjusted p-value of proteins.
            Points in red indicate significantly upregulated proteins, while points in blue indicate significantly downregulated proteins.
            Gray points are not significant."
-                           ),
-                           plotOutput("volcanoPlot"),
-                           downloadButton("download_volcano", "Download Volcano Plot (PNG)")
-                           
-                           
-                         )
-                       ),
-                       
-                       # Heatmap Section
-                       conditionalPanel(
-                         condition = "input.show_all || input.panel2_on",
-                         div(id = "heatmap_section",
-                           style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                           h4("Heatmap Plot"),
-                           p(
-                             "The heatmap represents the expression levels of significantly different proteins.
+                                                     ),
+                                                     plotOutput("volcanoPlot"),
+                                                     downloadButton("download_volcano", "Download Volcano Plot (PNG)")
+                                                     
+                                                     
+                                                )
+                                              ),
+                                              
+                                              # Heatmap Section
+                                              conditionalPanel(
+                                                condition = "input.show_all || input.panel2_on",
+                                                div(id = "heatmap_section",
+                                                    style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                                                    h4("Heatmap Plot"),
+                                                    p(
+                                                      "The heatmap represents the expression levels of significantly different proteins.
            Red indicates higher expression, blue indicates lower expression, and clustering shows relationships among proteins."
-                           ),
-                           plotOutput("heatmapPlot"),
-                           downloadButton("download_heatmap", "Download Heatmap Plot (PNG)")
-                           
-                         )
-                       ),
-                       
-                       # Filtered Table Section
-                       conditionalPanel(
-                         condition = "input.show_all || input.panel3_on",
-                         div(id = "table_section",
-                           style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                           h4("Filtered Results Table"),
-                           p(
-                             "This table lists proteins that are significantly different between conditions based on the specified thresholds.
+                                                    ),
+                                                    plotOutput("heatmapPlot"),
+                                                    downloadButton("download_heatmap", "Download Heatmap Plot (PNG)")
+                                                    
+                                                )
+                                              ),
+                                              
+                                              # Filtered Table Section
+                                              conditionalPanel(
+                                                condition = "input.show_all || input.panel3_on",
+                                                div(id = "table_section",
+                                                    style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                                                    h4("Filtered Results Table"),
+                                                    p(
+                                                      "This table lists proteins that are significantly different between conditions based on the specified thresholds.
            It includes log fold change, adjusted p-values, and classification as upregulated, downregulated, or not significant."
-                           ),
-                           # tableOutput("filteredResults"),
-                           div(
-                             style = "overflow-x: auto;",
-                             DTOutput("filteredResults")
-                           ),
-                           actionButton("show_less", "Show Significant Proteins"),
-                           actionButton("show_more", "Show All Proteins"),
-                           
-                           br(),
-                           downloadButton("download_table_significant", "Download Table Significant Proteins (CSV)"),
-                           downloadButton("download_table", "Download Table For All Proteins (CSV)"),
-                           
-                           
-                         )
-                       ),
-                       
-                       conditionalPanel(
-                         condition = "input.show_all || input.panel4_on",
-                         div(id = "pubmed_section",
-                           style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                           h4("PubMed Article Links"),
-                           p(
-                             "Below are links to PubMed articles related to studying the correlation between each significant protein and strokes."
-                           ),
-                           uiOutput("pubmedUI")
-                         )
-                       ),
-                       conditionalPanel(
-                         condition = "input.show_all || input.panel5_on",
-                         div(id = "protein2_section",
-                           style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
-                           h4("Protein2 Mapping"),
-                           p("This generates a protein interaction network image from STRING DB based on the significant proteins obtained from the analysis."),
-                           uiOutput("protein2Mapping"),
-                           downloadButton("download_protein2", "Download Protein Interaction Map (PNG)")
-                         )
-                       )
-                       
-                       
-                       
-                       
-                     )
-                     
-                   )),
-                   navbarMenu("Options", 
-                              tabPanel(actionButton("history", "Analysis History")),
-                              tabPanel(actionButton("logout", "Logout"))
-                   ),
-                   tabPanel("About", fluidPage(
-                     titlePanel(
-                       div("Proteomic Data Analysis Software", style = "text-align: center; font-size: 32px; font-weight: bold;")
-                     ),
-                     br(),
-                     br(),
-                     div(
-                       h3("About Us", style = "text-align: center;"),
-                       p(
-                         "Our software is designed for quantitative proteomic data analysis, providing visualization and statistical analysis to assist researchers in understanding protein expression changes.",
-                         style = "text-align: center;"
-                       ),
-                       br(),
-                       h3("Supported Tools & Formats", style = "text-align: center;"),
-                       p(
-                         "We utilize cutting-edge technologies: R, Shiny, ggplot2, limma, and pheatmap.",
-                         style = "text-align: center;"
-                       ),
-                       p("Supported file formats: CSV, XLSX.", style = "text-align: center;"),
-                       br(),
-                       h3("Contributors", style = "text-align: center;"),
-                       p("Dr. John Doe, Dr. Jane Smith, Alex Johnson.", style = "text-align: center;")
-                     )
-                   )),
-                   tabPanel(title = "Usage", value = "usage",
-                            fluidPage(
-                              div(style = "text-align: center;",
-                                  
-                                  # Main heading
-                                  h2(style = "font-size:35px;","Usage"),
-                                  
-                                  # Intro instructions
-                                  p(
-                                    "To use this software, first upload your proteomics data on the Analysis tab.
-   If you’d like to try a sample dataset, download it below and then re‑upload it here.",
-                                    style = "font-size:18px;"
-                                  ),
-                                  
-                                  
-                                  # Sample file download
-                                  h4("Sample CSV File"),
-                                  downloadButton("download_sample_csv", "Download ProteinquantitationHE&CI.csv"),
-                                  
-                                  br(), br(),
-                                  hr(style = "border-top: 1px solid #ccc; margin: 20px 0;"),
-                                  # Input fields explanation
-                                  h2(style = "font-size:35px;","Input Fields"),
-                                  tags$ul(style = "list-style-position: inside; padding-left: 0; text-align: center; font-size: 18px",
-                                          tags$li(strong("1. File Upload:"), "Select your proteomics dataset in CSV or XLSX format. This should contain your raw expression values."),
-                                          tags$li(strong("2. Protein Name Column:"), "Specify the header name for the column that lists protein identifiers (e.g. “Protein Name”)."),
-                                          tags$li(strong("3. Gene Name Column:"), "Enter the header for the column that contains gene symbols (e.g. “Gene Name”)."),
-                                          tags$li(strong("4. Patient Sample Columns:"), "Comma‑separated list of column names corresponding to patient (case) samples—these values will be compared to controls."),
-                                          tags$li(strong("5. Healthy Control Sample Columns:"), "Comma‑separated list of column names for your healthy (control) samples—used as the baseline for differential analysis."),
-                                          tags$li(strong("6. Log2 Fold Change Threshold:"), "A numeric cutoff (e.g. 1) for |log₂(fold change)|; proteins exceeding this change are considered biologically meaningful."),
-                                          tags$li(strong("7. Adjusted P‑Value Threshold:"), "A significance cutoff (e.g. 0.05) on the multiple‑testing corrected p‑values; proteins below this value are deemed statistically significant."),
-                                          tags$li(strong("8. Protein Data Preprocessing:"), "Choose whether to filter your protein expression data before analysis. Option include filtering out immunoglobulin proteins.")
-                                  ),
-                                  
-                                  br(),
-                                  hr(style = "border-top: 1px solid #ccc; margin: 20px 0;"),
-                                  # New section: How to use with sample file
-                                  h2(style = "font-size:35px;","How to use with the sample file"),
-                                  tags$ul(style = "list-style-position: inside; padding-left: 0; text-align: center;",
-                                          tags$li(
-                                            tags$div(
-                                              style = "font-size:18px; font-weight:bold;",
-                                              "1. Upload your sample file (or your own data) using the file upload box below:"
-                                            ),
-                                            tags$br(),
-                                            tags$img(
-                                              src   = "assets/images/UPLOAD_BOX.png",
-                                              alt   = "File Upload Box",
-                                              style = "width:30%; height:50%; border:1px solid #333;"
-                                            ),
-                                            tags$br()
-                                          ),
-                                          tags$br(),
-                                          tags$li(
-                                            tags$div(
-                                              style = "font-size:18px; font-weight:bold;",
-                                              '2. Identify and enter the protein‐name column. In the sample CSV it’s labeled "Accession", so type "Accession":'
-                                            ),
-                                            tags$br(),
-                                            tags$img(
-                                              src   = "assets/images/PROTEIN_COL.png",
-                                              alt   = "Protein Column Input",
-                                              style = "width:30%; height:50%; border:1px solid #333;"
-                                            ),
-                                            tags$br()
-                                          ),
-                                          tags$br(),
-                                          tags$li(
-                                            tags$div(
-                                              style = "font-size:18px; font-weight:bold;",
-                                              '3. Identify and enter the gene‐name column. In the sample CSV it’s labeled "Gene Name", so type "Gene Name":'
-                                            ),
-                                            tags$br(),
-                                            tags$img(
-                                              src   = "assets/images/GENE_COL.png",
-                                              alt   = "Gene Column Input",
-                                              style = "width:30%; height:50%; border:1px solid #333;"
-                                            ),
-                                            tags$br()
-                                          ),
-                                          tags$br(),
-                                          tags$li(
-                                            tags$div(
-                                              style = "font-size:18px; font-weight:bold;",
-                                              '4. Specify your sample and control columns. In the sample file, patients are "CI-1,CI-2,CI-3,CI-4" and controls are "HE-1,HE-2,HE-3,HE-4":'
-                                            ),
-                                            tags$br(),
-                                            tags$img(
-                                              src   = "assets/images/SAMPLE_COL.png",
-                                              alt   = "Sample Column Input",
-                                              style = "width:30%; height:50%; border:1px solid #333;"
-                                            ),
-                                            tags$br()
-                                          ),
-                                          tags$br(),
-                                          tags$li(
-                                            tags$div(
-                                              style = "font-size:18px; font-weight:bold;",
-                                              "5. Set your thresholds. For the sample run we recommend Log2 FC = 1 and Adjusted P‑value = 0.05:"
-                                            ),
-                                            tags$br(),
-                                            tags$img(
-                                              src   = "assets/images/ML_VALUES.png",
-                                              alt   = "Threshold Values Input",
-                                              style = "width:30%; height:50%; border:1px solid #333;"
-                                            ),
-                                            tags$br()
-                                          ),
-                                          tags$br(),
-                                          tags$li(
-                                            tags$div(
-                                              style = "font-size:18px; font-weight:bold;",
-                                              '6. Click **Start Analysis** and wait for the status to change from "Results not Ready" to "Ready" before exploring your outputs:'
-                                            ),
-                                            tags$br(),
-                                            tags$img(
-                                              src   = "assets/images/NOT_READY.png",
-                                              alt   = "Not Ready Status",
-                                              style = "max-width:45%; height:auto; margin-right:1em; border:1px solid #333;"
-                                            ),
-                                            tags$img(
-                                              src   = "assets/images/READY.png",
-                                              alt   = "Ready Status",
-                                              style = "max-width:45%; height:auto; border:1px solid #333;"
+                                                    ),
+                                                    # tableOutput("filteredResults"),
+                                                    div(
+                                                      style = "overflow-x: auto;",
+                                                      DTOutput("filteredResults")
+                                                    ),
+                                                    actionButton("show_less", "Show Significant Proteins"),
+                                                    actionButton("show_more", "Show All Proteins"),
+                                                    
+                                                    br(),
+                                                    downloadButton("download_table_significant", "Download Table Significant Proteins (CSV)"),
+                                                    downloadButton("download_table", "Download Table For All Proteins (CSV)"),
+                                                    
+                                                    
+                                                )
+                                              ),
+                                              
+                                              conditionalPanel(
+                                                condition = "input.show_all || input.panel4_on",
+                                                div(id = "pubmed_section",
+                                                    style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                                                    h4("PubMed Article Links"),
+                                                    p(
+                                                      "Below are links to PubMed articles related to studying the correlation between each significant protein and strokes."
+                                                    ),
+                                                    uiOutput("pubmedUI")
+                                                )
+                                              ),
+                                              conditionalPanel(
+                                                condition = "input.show_all || input.panel5_on",
+                                                div(id = "protein2_section",
+                                                    style = "border: 1px solid black; padding: 10px; margin-bottom: 20px;",
+                                                    h4("Protein2 Mapping"),
+                                                    p("This generates a protein interaction network image from STRING DB based on the significant proteins obtained from the analysis."),
+                                                    uiOutput("protein2Mapping"),
+                                                    downloadButton("download_protein2", "Download Protein Interaction Map (PNG)")
+                                                )
+                                              )
+                                              
+                                              
+                                              
+                                              
                                             )
-                                          )
-                                  ),
-                                  
-                                  br(), br(),
-                                  hr(style = "border-top: 1px solid #ccc; margin: 20px 0;"),
-                                  
-                                  # Output fields explanation
-                                  # Output fields explanation with images and line breaks
-                                  h2(style = "font-size:35px;", "Output and Results"),
-                                  tags$ul(
-                                    style = "
+                                            
+                                          )),
+                                          navbarMenu("Options", 
+                                                     tabPanel(actionButton("history", "Analysis History")),
+                                                     tabPanel(actionButton("logout", "Logout"))
+                                          ),
+                                          tabPanel("About", fluidPage(
+                                            titlePanel(
+                                              div("Proteomic Data Analysis Software", style = "text-align: center; font-size: 32px; font-weight: bold;")
+                                            ),
+                                            br(),
+                                            br(),
+                                            div(
+                                              h3("About Us", style = "text-align: center;"),
+                                              p(
+                                                "Our software is designed for quantitative proteomic data analysis, providing visualization and statistical analysis to assist researchers in understanding protein expression changes.",
+                                                style = "text-align: center;"
+                                              ),
+                                              br(),
+                                              h3("Supported Tools & Formats", style = "text-align: center;"),
+                                              p(
+                                                "We utilize cutting-edge technologies: R, Shiny, ggplot2, limma, and pheatmap.",
+                                                style = "text-align: center;"
+                                              ),
+                                              p("Supported file formats: CSV, XLSX.", style = "text-align: center;"),
+                                              br(),
+                                              h3("Contributors", style = "text-align: center;"),
+                                              p("Dr. John Doe, Dr. Jane Smith, Alex Johnson.", style = "text-align: center;")
+                                            )
+                                          )),
+                                          tabPanel(title = "Usage", value = "usage",
+                                                   fluidPage(
+                                                     div(style = "text-align: center;",
+                                                         
+                                                         # Main heading
+                                                         h2(style = "font-size:35px;","Usage"),
+                                                         
+                                                         # Intro instructions
+                                                         p(
+                                                           "To use this software, first upload your proteomics data on the Analysis tab.
+   If you’d like to try a sample dataset, download it below and then re‑upload it here.",
+                                                           style = "font-size:18px;"
+                                                         ),
+                                                         
+                                                         
+                                                         # Sample file download
+                                                         h4("Sample CSV File"),
+                                                         downloadButton("download_sample_csv", "Download ProteinquantitationHE&CI.csv"),
+                                                         
+                                                         br(), br(),
+                                                         hr(style = "border-top: 1px solid #ccc; margin: 20px 0;"),
+                                                         # Input fields explanation
+                                                         h2(style = "font-size:35px;","Input Fields"),
+                                                         tags$ul(style = "list-style-position: inside; padding-left: 0; text-align: center; font-size: 18px",
+                                                                 tags$li(strong("1. File Upload:"), "Select your proteomics dataset in CSV or XLSX format. This should contain your raw expression values."),
+                                                                 tags$li(strong("2. Protein Name Column:"), "Specify the header name for the column that lists protein identifiers (e.g. “Protein Name”)."),
+                                                                 tags$li(strong("3. Gene Name Column:"), "Enter the header for the column that contains gene symbols (e.g. “Gene Name”)."),
+                                                                 tags$li(strong("4. Patient Sample Columns:"), "Comma‑separated list of column names corresponding to patient (case) samples—these values will be compared to controls."),
+                                                                 tags$li(strong("5. Healthy Control Sample Columns:"), "Comma‑separated list of column names for your healthy (control) samples—used as the baseline for differential analysis."),
+                                                                 tags$li(strong("6. Log2 Fold Change Threshold:"), "A numeric cutoff (e.g. 1) for |log₂(fold change)|; proteins exceeding this change are considered biologically meaningful."),
+                                                                 tags$li(strong("7. Adjusted P‑Value Threshold:"), "A significance cutoff (e.g. 0.05) on the multiple‑testing corrected p‑values; proteins below this value are deemed statistically significant."),
+                                                                 tags$li(strong("8. Protein Data Preprocessing:"), "Choose whether to filter your protein expression data before analysis. Option include filtering out immunoglobulin proteins.")
+                                                         ),
+                                                         
+                                                         br(),
+                                                         hr(style = "border-top: 1px solid #ccc; margin: 20px 0;"),
+                                                         # New section: How to use with sample file
+                                                         h2(style = "font-size:35px;","How to use with the sample file"),
+                                                         tags$ul(style = "list-style-position: inside; padding-left: 0; text-align: center;",
+                                                                 tags$li(
+                                                                   tags$div(
+                                                                     style = "font-size:18px; font-weight:bold;",
+                                                                     "1. Upload your sample file (or your own data) using the file upload box below:"
+                                                                   ),
+                                                                   tags$br(),
+                                                                   tags$img(
+                                                                     src   = "assets/images/UPLOAD_BOX.png",
+                                                                     alt   = "File Upload Box",
+                                                                     style = "width:30%; height:50%; border:1px solid #333;"
+                                                                   ),
+                                                                   tags$br()
+                                                                 ),
+                                                                 tags$br(),
+                                                                 tags$li(
+                                                                   tags$div(
+                                                                     style = "font-size:18px; font-weight:bold;",
+                                                                     '2. Identify and enter the protein‐name column. In the sample CSV it’s labeled "Accession", so type "Accession":'
+                                                                   ),
+                                                                   tags$br(),
+                                                                   tags$img(
+                                                                     src   = "assets/images/PROTEIN_COL.png",
+                                                                     alt   = "Protein Column Input",
+                                                                     style = "width:30%; height:50%; border:1px solid #333;"
+                                                                   ),
+                                                                   tags$br()
+                                                                 ),
+                                                                 tags$br(),
+                                                                 tags$li(
+                                                                   tags$div(
+                                                                     style = "font-size:18px; font-weight:bold;",
+                                                                     '3. Identify and enter the gene‐name column. In the sample CSV it’s labeled "Gene Name", so type "Gene Name":'
+                                                                   ),
+                                                                   tags$br(),
+                                                                   tags$img(
+                                                                     src   = "assets/images/GENE_COL.png",
+                                                                     alt   = "Gene Column Input",
+                                                                     style = "width:30%; height:50%; border:1px solid #333;"
+                                                                   ),
+                                                                   tags$br()
+                                                                 ),
+                                                                 tags$br(),
+                                                                 tags$li(
+                                                                   tags$div(
+                                                                     style = "font-size:18px; font-weight:bold;",
+                                                                     '4. Specify your sample and control columns. In the sample file, patients are "CI-1,CI-2,CI-3,CI-4" and controls are "HE-1,HE-2,HE-3,HE-4":'
+                                                                   ),
+                                                                   tags$br(),
+                                                                   tags$img(
+                                                                     src   = "assets/images/SAMPLE_COL.png",
+                                                                     alt   = "Sample Column Input",
+                                                                     style = "width:30%; height:50%; border:1px solid #333;"
+                                                                   ),
+                                                                   tags$br()
+                                                                 ),
+                                                                 tags$br(),
+                                                                 tags$li(
+                                                                   tags$div(
+                                                                     style = "font-size:18px; font-weight:bold;",
+                                                                     "5. Set your thresholds. For the sample run we recommend Log2 FC = 1 and Adjusted P‑value = 0.05:"
+                                                                   ),
+                                                                   tags$br(),
+                                                                   tags$img(
+                                                                     src   = "assets/images/ML_VALUES.png",
+                                                                     alt   = "Threshold Values Input",
+                                                                     style = "width:30%; height:50%; border:1px solid #333;"
+                                                                   ),
+                                                                   tags$br()
+                                                                 ),
+                                                                 tags$br(),
+                                                                 tags$li(
+                                                                   tags$div(
+                                                                     style = "font-size:18px; font-weight:bold;",
+                                                                     '6. Click **Start Analysis** and wait for the status to change from "Results not Ready" to "Ready" before exploring your outputs:'
+                                                                   ),
+                                                                   tags$br(),
+                                                                   tags$img(
+                                                                     src   = "assets/images/NOT_READY.png",
+                                                                     alt   = "Not Ready Status",
+                                                                     style = "max-width:45%; height:auto; margin-right:1em; border:1px solid #333;"
+                                                                   ),
+                                                                   tags$img(
+                                                                     src   = "assets/images/READY.png",
+                                                                     alt   = "Ready Status",
+                                                                     style = "max-width:45%; height:auto; border:1px solid #333;"
+                                                                   )
+                                                                 )
+                                                         ),
+                                                         
+                                                         br(), br(),
+                                                         hr(style = "border-top: 1px solid #ccc; margin: 20px 0;"),
+                                                         
+                                                         # Output fields explanation
+                                                         # Output fields explanation with images and line breaks
+                                                         h2(style = "font-size:35px;", "Output and Results"),
+                                                         tags$ul(
+                                                           style = "
     list-style-position: inside;
     padding-left: 0;
     text-align: center;
     font-size: 18px;
   ",
-                                    
-                                    # Toggle Button
-                                    tags$li(
-                                      strong("1. Output Toggles:"), "Can toggle each of the output panels on and off.",
-                                      tags$br(),
-                                      tags$br(),
-                                      tags$img(
-                                        src   = "assets/images/TOGGLE_BUTTON.png",
-                                        alt   = "Toggle Buttons",
-                                        style = "width:30%; height:50%; border:1px solid #333;"
-                                      ),
-                                      tags$br()
-                                    ),
-                                    tags$br(),
-                                    
-                                    # Volcano Plot
-                                    tags$li(
-                                      strong("2. Volcano Plot (Downloadable in png):"),
-                                      "Visualizes each protein’s log₂ fold change versus –log₁₀(adjusted p‑value). Up‑ and downregulated proteins are highlighted in red/blue",
-                                      tags$br(),
-                                      tags$br(),
-                                      tags$img(
-                                        src   = "assets/images/VOLCANO_PLOT.png",
-                                        alt   = "Volcano Plot",
-                                        style = "width:30%; height:50%; border:1px solid #333;"
-                                      ),
-                                      tags$br()
-                                    ),
-                                    tags$br(),
-                                    
-                                    # Heatmap Plot
-                                    tags$li(
-                                      strong("3. Heatmap Plot (Downloadable in png):"),
-                                      "Shows row‑scaled expression of significant proteins across all samples, clustered to reveal patterns of co‑expression.",
-                                      tags$br(),
-                                      tags$br(),
-                                      tags$img(
-                                        src   = "assets/images/HEATMAP_PLOT.png",
-                                        alt   = "Heatmap Plot",
-                                        style = "width:30%; height:50%; border:1px solid #333;"
-                                      ),
-                                      tags$br()
-                                    ),
-                                    tags$br(),
-                                    
-                                    # Filtered Table
-                                    tags$li(
-                                      strong("4. Filtered Results Table (Downloadable in CSV):"),
-                                      "Tabular list of proteins passing both your log₂ fold change and adjusted p‑value thresholds, with their numerical statistics and regulation status. You can either download all the proteins collected or only the significant ones.",
-                                      tags$br(),
-                                      tags$br(),
-                                      tags$img(
-                                        src   = "assets/images/FILTERED_TABLE.png",
-                                        alt   = "Filtered Results Table",
-                                        style = "width:30%; height:50%; border:1px solid #333;"
-                                      ),
-                                      tags$br()
-                                    ),
-                                    tags$br(),
-                                    
-                                    # PubMed Article Links
-                                    tags$li(
-                                      strong("5. PubMed Article Links:"),
-                                      "Clickable links to PubMed abstracts for each significant protein, aiding your literature exploration of protein–stroke associations. Clicking on a protein will open up a protein interaction map and brief information on the protein as shown in the next section.",
-                                      tags$br(),
-                                      tags$br(),
-                                      tags$img(
-                                        src   = "assets/images/PUBMED_ARTICLES.png",
-                                        alt   = "PubMed Links",
-                                        style = "width:30%; height:50%; border:1px solid #333;"
-                                      ),
-                                      tags$br()
-                                    ),
-                                    tags$br(),
-                                    
-                                    # Popup Modal / Protein Functions
-                                    tags$li(
-                                      strong("6. Protein Functions & Info:"),
-                                      "Network diagram from STRING‑DB showing known interactors for your clicked significant proteins. Includes additional information regarding protein function and catalytic activity.",
-                                      tags$br(),
-                                      tags$br(),
-                                      tags$img(
-                                        src   = "assets/images/POPUP_MODAL.png",
-                                        alt   = "Popup Modal",
-                                        style = "width:30%; height:50%; border:1px solid #333;"
-                                      ),
-                                      tags$br()
-                                    ),
-                                    tags$br(),
-                                    
-                                    # Protein Interaction Map
-                                    tags$li(
-                                      strong("7. Protein Interaction Map (png):"),
-                                      "Subnetwork focused solely on the significant proteins themselves, illustrating direct interactions within your filtered set.",
-                                      tags$br(),
-                                      tags$br(),
-                                      tags$img(
-                                        src   = "assets/images/PROTEIN_INTERACTION.png",
-                                        alt   = "Protein Interaction Map",
-                                        style = "width:30%; height:50%; border:1px solid #333;"
-                                      ),
-                                      tags$br()
-                                    ),
-                                    tags$br(),
-                                    
-                                    # Download Full Report
-                                    tags$li(
-                                      strong("8. Download Full Report (Downloadable in PDF):"),
-                                      "The button allows you to create a summarized PDF report with all the plots, graphs and tables that you have collected as a result/output.",
-                                      tags$br(),
-                                      tags$br(),
-                                      tags$img(
-                                        src   = "assets/images/DOWNLOAD_REPORT.png",
-                                        alt   = "Download Report Button",
-                                        style = "width:30%; height:50%; border:1px solid #333;"
-                                      ),
-                                      tags$br()
-                                    )
-                                  )
-                                  
-                                  
-                              )  # end div(style="text-align:center;")
-                            )  # end fluidPage()
-                   )  # end tabPanel("Usage")
-                   
-                   
-                   
-                   
+                                                           
+                                                           # Toggle Button
+                                                           tags$li(
+                                                             strong("1. Output Toggles:"), "Can toggle each of the output panels on and off.",
+                                                             tags$br(),
+                                                             tags$br(),
+                                                             tags$img(
+                                                               src   = "assets/images/TOGGLE_BUTTON.png",
+                                                               alt   = "Toggle Buttons",
+                                                               style = "width:30%; height:50%; border:1px solid #333;"
+                                                             ),
+                                                             tags$br()
+                                                           ),
+                                                           tags$br(),
+                                                           
+                                                           # Volcano Plot
+                                                           tags$li(
+                                                             strong("2. Volcano Plot (Downloadable in png):"),
+                                                             "Visualizes each protein’s log₂ fold change versus –log₁₀(adjusted p‑value). Up‑ and downregulated proteins are highlighted in red/blue",
+                                                             tags$br(),
+                                                             tags$br(),
+                                                             tags$img(
+                                                               src   = "assets/images/VOLCANO_PLOT.png",
+                                                               alt   = "Volcano Plot",
+                                                               style = "width:30%; height:50%; border:1px solid #333;"
+                                                             ),
+                                                             tags$br()
+                                                           ),
+                                                           tags$br(),
+                                                           
+                                                           # Heatmap Plot
+                                                           tags$li(
+                                                             strong("3. Heatmap Plot (Downloadable in png):"),
+                                                             "Shows row‑scaled expression of significant proteins across all samples, clustered to reveal patterns of co‑expression.",
+                                                             tags$br(),
+                                                             tags$br(),
+                                                             tags$img(
+                                                               src   = "assets/images/HEATMAP_PLOT.png",
+                                                               alt   = "Heatmap Plot",
+                                                               style = "width:30%; height:50%; border:1px solid #333;"
+                                                             ),
+                                                             tags$br()
+                                                           ),
+                                                           tags$br(),
+                                                           
+                                                           # Filtered Table
+                                                           tags$li(
+                                                             strong("4. Filtered Results Table (Downloadable in CSV):"),
+                                                             "Tabular list of proteins passing both your log₂ fold change and adjusted p‑value thresholds, with their numerical statistics and regulation status. You can either download all the proteins collected or only the significant ones.",
+                                                             tags$br(),
+                                                             tags$br(),
+                                                             tags$img(
+                                                               src   = "assets/images/FILTERED_TABLE.png",
+                                                               alt   = "Filtered Results Table",
+                                                               style = "width:30%; height:50%; border:1px solid #333;"
+                                                             ),
+                                                             tags$br()
+                                                           ),
+                                                           tags$br(),
+                                                           
+                                                           # PubMed Article Links
+                                                           tags$li(
+                                                             strong("5. PubMed Article Links:"),
+                                                             "Clickable links to PubMed abstracts for each significant protein, aiding your literature exploration of protein–stroke associations. Clicking on a protein will open up a protein interaction map and brief information on the protein as shown in the next section.",
+                                                             tags$br(),
+                                                             tags$br(),
+                                                             tags$img(
+                                                               src   = "assets/images/PUBMED_ARTICLES.png",
+                                                               alt   = "PubMed Links",
+                                                               style = "width:30%; height:50%; border:1px solid #333;"
+                                                             ),
+                                                             tags$br()
+                                                           ),
+                                                           tags$br(),
+                                                           
+                                                           # Popup Modal / Protein Functions
+                                                           tags$li(
+                                                             strong("6. Protein Functions & Info:"),
+                                                             "Network diagram from STRING‑DB showing known interactors for your clicked significant proteins. Includes additional information regarding protein function and catalytic activity.",
+                                                             tags$br(),
+                                                             tags$br(),
+                                                             tags$img(
+                                                               src   = "assets/images/POPUP_MODAL.png",
+                                                               alt   = "Popup Modal",
+                                                               style = "width:30%; height:50%; border:1px solid #333;"
+                                                             ),
+                                                             tags$br()
+                                                           ),
+                                                           tags$br(),
+                                                           
+                                                           # Protein Interaction Map
+                                                           tags$li(
+                                                             strong("7. Protein Interaction Map (png):"),
+                                                             "Subnetwork focused solely on the significant proteins themselves, illustrating direct interactions within your filtered set.",
+                                                             tags$br(),
+                                                             tags$br(),
+                                                             tags$img(
+                                                               src   = "assets/images/PROTEIN_INTERACTION.png",
+                                                               alt   = "Protein Interaction Map",
+                                                               style = "width:30%; height:50%; border:1px solid #333;"
+                                                             ),
+                                                             tags$br()
+                                                           ),
+                                                           tags$br(),
+                                                           
+                                                           # Download Full Report
+                                                           tags$li(
+                                                             strong("8. Download Full Report (Downloadable in PDF):"),
+                                                             "The button allows you to create a summarized PDF report with all the plots, graphs and tables that you have collected as a result/output.",
+                                                             tags$br(),
+                                                             tags$br(),
+                                                             tags$img(
+                                                               src   = "assets/images/DOWNLOAD_REPORT.png",
+                                                               alt   = "Download Report Button",
+                                                               style = "width:30%; height:50%; border:1px solid #333;"
+                                                             ),
+                                                             tags$br()
+                                                           )
+                                                         )
+                                                         
+                                                         
+                                                     )  # end div(style="text-align:center;")
+                                                   )  # end fluidPage()
+                                          )  # end tabPanel("Usage")
+                                          
+                                          
+                                          
+                                          
       )
-  )
+      )
     }
   })
   
@@ -891,7 +891,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("jsCode", list(code = sprintf("$('#%s').click();", btn)))
     }
   })
-
+  
   
   
   processedData <- eventReactive(input$start_analysis, {
@@ -1085,7 +1085,7 @@ server <- function(input, output, session) {
     rownames = FALSE
   )
   
-
+  
   observeEvent(input$show_more, {
     tableData(processedData()$result)
   })
@@ -1144,7 +1144,7 @@ server <- function(input, output, session) {
     return(links)
   }
   
-
+  
   
   observeEvent(input$panel4_on, {
     req(processedData())
@@ -1759,7 +1759,7 @@ server <- function(input, output, session) {
         combined_img <- image_append(c(network_img, legend_centered), stack = TRUE)
         
         # Scale the combined image up by 40% (i.e. 140% of its original size)
-        combined_img <- image_scale(combined_img, "140%")
+        # combined_img <- image_scale(combined_img, "140%")
         
         # Write the combined image as a png file, preserving transparency
         image_write(combined_img, path = protein2_path, format = "png")
@@ -1819,10 +1819,10 @@ server <- function(input, output, session) {
       )
       analysis_id <- result$analysis_id
       s3_key <- paste0("reports/", input$username, "_", Sys.Date(), "_", analysis_id, ".pdf")
-#       Sys.setenv(
-#   AWS_DEFAULT_REGION = "ap-southeast-1",
-#   AWS_S3_ENDPOINT    = "https://s3-ap-southeast-1.amazonaws.com"
-# )
+      #       Sys.setenv(
+      #   AWS_DEFAULT_REGION = "ap-southeast-1",
+      #   AWS_S3_ENDPOINT    = "https://s3-ap-southeast-1.amazonaws.com"
+      # )
       put_object(
         file = file,
         object = s3_key,

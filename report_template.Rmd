@@ -21,17 +21,17 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 # Volcano Plot
-```{r volcano_plot}
+```{r volcano_plot, out.width='100%', fig.align='center'}
 knitr::include_graphics(params$volcano_path)
 ```
 
 # Heatmap Plot
-```{r heatmap_plot}
+```{r heatmap_plot, out.width='100%', fig.align='center'}
 knitr::include_graphics(params$heatmap_path)
 ```
 
 # Protein2 Interaction Map
-```{r protein2map_plot}
+```{r protein2map_plot, out.width='100%', fig.align='center'}
 knitr::include_graphics(params$protein2_path)
 ```
 
