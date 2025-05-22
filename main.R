@@ -130,35 +130,91 @@ server <- function(input, output, session) {
   output$dynamicUI <- renderUI({
     if (!login_attempt()) {
       fluidPage(
-        
+     
         
         titlePanel(
-          div("Proteomic Data Analysis Software", style = "text-align: center; font-size: 32px; font-weight: bold;")
+          div("Proteomic Data Analysis Software", style = "text-align: center; font-size: 50px; font-weight: bold;")
         ),
+        tags$div(
+          style = "text-align: center; margin-bottom: 20px;",
+          tags$img(
+            src   = "assets/images/BACKGROUNDLOGO.png",
+            style = "max-width: 350px; height: auto;"
+          )
+        ),
+        tags$div(
+          style = "text-align: center; margin-top: 20px;",
+          actionButton(
+            inputId = "goToLogin",
+            label   = "Begin",
+            style   = "background-color: #333333 !important;
+               color: #001F3F !important;
+               padding: 16px 32px !important;
+               font-size: 1.2em !important;
+               border: none !important;
+               border-radius: 5px !important;"
+          )
+        ),
+        
+        br(),
         br(),
         div(
-          actionButton("goToLogin", "Begin", style = "display: block; margin: 0 auto; font-size: 18px; padding: 10px 20px;"),
-          style = "text-align: center;"
-        ),
-        br(),
-        br(),
-        div(
+          style = "transform: scale(1.3); transform-origin: top center;",
+          
           h3("About Us", style = "text-align: center;"),
           p(
-            "Our software is designed for quantitative proteomic data analysis, providing visualization and statistical analysis to assist researchers in understanding protein expression changes.",
+            "Proteomic is an interactive Shiny application built to empower researchers",
+            br(), 
+            "with fast, robust insights into proteomic data.",
+            br(), 
+            "Leveraging protein biomarker profiles, our platform applies state-of-the-art",
+            br(),
+            "statistical models to predict disease associations and uncover patterns.",
             style = "text-align: center;"
           ),
           br(),
+          
+          h3("Key Features", style = "text-align: center;"),
+          tags$ul(
+            style = "list-style-type: none; text-align: center; padding-left: 0;",
+            tags$li("• Interactive volcano plots for rapid detection of significant fold-changes"),
+            tags$li("• Heatmap clustering to reveal expression patterns across groups"),
+            tags$li("• On-demand PubMed lookup for literature support"),
+            tags$li("• Automated protein interaction maps via STRING-DB"),
+            tags$li("• One-click download of figures, tables & PDF reports")
+          ),
+          br(),
+          
           h3("Supported Tools & Formats", style = "text-align: center;"),
           p(
-            "We utilize cutting-edge technologies: R, Shiny, ggplot2, limma, and pheatmap.",
+            "Built with Shiny, R, ggplot2, limma, pheatmap, and magick.",
+            br(),
+            "Accepts proteomic input in CSV and XLSX formats with seamless upload + preprocessing.",
             style = "text-align: center;"
           ),
-          p("Supported file formats: CSV, XLSX.", style = "text-align: center;"),
           br(),
-          h3("Contributors", style = "text-align: center;"),
-          p("Dr. John Doe, Dr. Jane Smith, Alex Johnson.", style = "text-align: center;")
+          
+          h3("Our Team", style = "text-align: center;"),
+          tags$ul(
+            style = "list-style-type: none; text-align: center; padding-left: 0;",
+            tags$li("Hui Ying — Lead Backend Developer"),
+            tags$li("Myint Myat Thura - Lead Frontend Developer"),
+            tags$li("Reynaldi - UI/Ux Designer"),
+            tags$li("Charlene - Tester and Researcher")
+          ),
+          br(),
+          
+          h3("Contact & License", style = "text-align: center;"),
+          p(
+            "For inquiries: ",
+            tags$a(href = "mailto:info@proteomic.org", "info@proteomic.org"),
+            br(),
+            "© 2025 Proteomic. MIT License.",
+            style = "text-align: center; font-size: 0.8em; color: #666;"
+          )
         )
+        
+        
       )
     } else if (!user_auth()) {
       if (!show_register()) {
@@ -365,26 +421,70 @@ server <- function(input, output, session) {
                                           ),
                                           tabPanel("About", fluidPage(
                                             titlePanel(
-                                              div("Proteomic Data Analysis Software", style = "text-align: center; font-size: 32px; font-weight: bold;")
+                                              div("Proteomic Data Analysis Software", style = "text-align: center; font-size: 50px; font-weight: bold;")
                                             ),
-                                            br(),
-                                            br(),
+                                            tags$div(
+                                              style = "text-align: center; margin-bottom: 20px;",
+                                              tags$img(
+                                                src   = "assets/images/BACKGROUNDLOGO.png",
+                                                style = "max-width: 350px; height: auto;"
+                                              )
+                                            ),
+                                     
                                             div(
+                                              style = "transform: scale(1.3); transform-origin: top center;",
+                                              
                                               h3("About Us", style = "text-align: center;"),
                                               p(
-                                                "Our software is designed for quantitative proteomic data analysis, providing visualization and statistical analysis to assist researchers in understanding protein expression changes.",
+                                                "Proteomic is an interactive Shiny application built to empower researchers",
+                                                br(), 
+                                                "with fast, robust insights into proteomic data.",
+                                                br(), 
+                                                "Leveraging protein biomarker profiles, our platform applies state-of-the-art",
+                                                br(),
+                                                "statistical models to predict disease associations and uncover patterns.",
                                                 style = "text-align: center;"
                                               ),
                                               br(),
+                                              
+                                              h3("Key Features", style = "text-align: center;"),
+                                              tags$ul(
+                                                style = "list-style-type: none; text-align: center; padding-left: 0;",
+                                                tags$li("• Interactive volcano plots for rapid detection of significant fold-changes"),
+                                                tags$li("• Heatmap clustering to reveal expression patterns across groups"),
+                                                tags$li("• On-demand PubMed lookup for literature support"),
+                                                tags$li("• Automated protein interaction maps via STRING-DB"),
+                                                tags$li("• One-click download of figures, tables & PDF reports")
+                                              ),
+                                              br(),
+                                              
                                               h3("Supported Tools & Formats", style = "text-align: center;"),
                                               p(
-                                                "We utilize cutting-edge technologies: R, Shiny, ggplot2, limma, and pheatmap.",
+                                                "Built with Shiny, R, ggplot2, limma, pheatmap, and magick.",
+                                                br(),
+                                                "Accepts proteomic input in CSV and XLSX formats with seamless upload + preprocessing.",
                                                 style = "text-align: center;"
                                               ),
-                                              p("Supported file formats: CSV, XLSX.", style = "text-align: center;"),
                                               br(),
-                                              h3("Contributors", style = "text-align: center;"),
-                                              p("Dr. John Doe, Dr. Jane Smith, Alex Johnson.", style = "text-align: center;")
+                                              
+                                              h3("Our Team", style = "text-align: center;"),
+                                              tags$ul(
+                                                style = "list-style-type: none; text-align: center; padding-left: 0;",
+                                                tags$li("Hui Ying — Lead Backend Developer"),
+                                                tags$li("Myint Myat Thura - Lead Frontend Developer"),
+                                                tags$li("Reynaldi - UI/Ux Designer"),
+                                                tags$li("Charlene - Tester and Researcher")
+                                              ),
+                                              br(),
+                                              
+                                              h3("Contact & License", style = "text-align: center;"),
+                                              p(
+                                                "For inquiries: ",
+                                                tags$a(href = "mailto:info@proteomic.org", "info@proteomic.org"),
+                                                br(),
+                                                "© 2025 Proteomic. MIT License.",
+                                                style = "text-align: center; font-size: 0.8em; color: #666;"
+                                              )
                                             )
                                           )),
                                           tabPanel(title = "Usage", value = "usage",
@@ -499,7 +599,21 @@ server <- function(input, output, session) {
                                                                  tags$li(
                                                                    tags$div(
                                                                      style = "font-size:18px; font-weight:bold;",
-                                                                     '6. Click **Start Analysis** and wait for the status to change from "Results not Ready" to "Ready" before exploring your outputs:'
+                                                                     "6. Perform a light dataset cleaning. You will need to put the name of the column with Protein Descriptions."
+                                                                   ),
+                                                                   tags$br(),
+                                                                   tags$img(
+                                                                     src   = "assets/images/PREPROCESS.png",
+                                                                     alt   = "Threshold Values Input",
+                                                                     style = "width:30%; height:50%; border:1px solid #333;"
+                                                                   ),
+                                                                   tags$br()
+                                                                 ),
+                                                                 tags$br(),
+                                                                 tags$li(
+                                                                   tags$div(
+                                                                     style = "font-size:18px; font-weight:bold;",
+                                                                     '7. Click **Start Analysis** and wait for the status to change from "Results not Ready" to "Ready" before exploring your outputs:'
                                                                    ),
                                                                    tags$br(),
                                                                    tags$img(
@@ -535,7 +649,7 @@ server <- function(input, output, session) {
                                                              tags$br(),
                                                              tags$br(),
                                                              tags$img(
-                                                               src   = "assets/images/TOGGLE_BUTTON.png",
+                                                               src   = "assets/images/CHECKBOXES.png",
                                                                alt   = "Toggle Buttons",
                                                                style = "width:30%; height:50%; border:1px solid #333;"
                                                              ),
