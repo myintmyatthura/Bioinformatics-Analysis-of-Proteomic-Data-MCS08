@@ -429,7 +429,7 @@ server <- function(input, output, session) {
                                                 src   = "assets/images/BACKGROUNDLOGO.png",
                                                 style = "max-width: 350px; height: auto;"
                                               )
-                                            ),
+                                            ), 
                                      
                                             div(
                                               style = "transform: scale(1.3); transform-origin: top center;",
@@ -1012,7 +1012,7 @@ server <- function(input, output, session) {
     req(
       input$file,
       input$protein_columns,
-      input$gene_columns,
+      # input$gene_columns,
       input$ci_columns,
       input$he_columns,
       input$log2_threshold,
@@ -1077,10 +1077,44 @@ server <- function(input, output, session) {
     result$Protein <- rownames(result)
     gene_col <- input$gene_columns
     
+    # if (!is.null(input$gene_columns) &&
+    #     input$gene_columns == input$protein_columns) {
+    #   
+    #   # Lookup each accession’s gene name
+    #   gene_names <- vapply(
+    #     result$Protein,
+    #     function(acc) {
+    #       meta <- get_uniprot_metadata(acc)
+    #       if (!is.null(meta$gene) && nzchar(meta$gene)) {
+    #         # strip any evidence tags just in case
+    #         trimws(gsub("\\{[^}]+\\}", "", meta$gene))
+    #       } else {
+    #         NA_character_
+    #       }
+    #     },
+    #     FUN.VALUE = character(1)
+    #   )
+    #   
+    #   result$Gene <- gene_names
+    #   
+    #   # Reorder so Protein, Gene, then everything else
+    #   result <- result[, c("Protein", "Gene", setdiff(names(result), c("Protein","Gene")))]
+    #   
+    # } else if (!is.null(input$gene_columns) && input$gene_columns %in% colnames(data)) {
+    #   # Your existing logic: pull Gene from the uploaded column
+    #   result$Gene <- data[rownames(result), input$gene_columns]
+    #   result <- result[, c("Protein", "Gene", setdiff(names(result), c("Protein","Gene")))]
+    #   
+    # } else {
+    #   # No Gene at all: just leave Protein + the rest
+    #   result <- result[, c("Protein", setdiff(names(result), "Protein"))]
+    # }
+    
+    
     if (!is.null(gene_col) && gene_col != "" && gene_col %in% colnames(data)) {
       # Add Gene column to result
       result$Gene <- data[rownames(result), gene_col]
-      
+
       # Reorder columns: Protein, Gene, rest
       result <- result[, c("Protein", "Gene", setdiff(colnames(result), c("Protein", "Gene")))]
     } else {
@@ -1211,12 +1245,32 @@ server <- function(input, output, session) {
   
   
   getPubMedLinks <- function(protein_name) {
-    query <- URLencode(paste0(protein_name, "protein stroke"))
-    esearch_url <- paste0(
-      "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?",
-      "db=pubmed&retmode=json&retmax=5&term=",
-      query
+    # query <- URLencode(paste0(protein_name, "protein stroke"))
+    # esearch_url <- paste0(
+    #   "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?",
+    #   "db=pubmed&retmode=json&retmax=5&term=",
+    #   query
+    # )
+    # include a space so the term becomes “P30044 protein stroke”
+    
+    
+    term <- paste(protein_name, "protein stroke")
+    esearch_url <- sprintf(
+      "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=5&term=%s",
+      URLencode(term)
     )
+    
+    # search_term <- paste0('"', protein_name, '"', ' AND (stroke OR cerebral OR ischemia OR brain injury)')
+    # 
+    # # Properly encode the search term
+    # encoded_term <- URLencode(search_term, reserved = TRUE)
+    # 
+    # # Construct the esearch URL
+    # esearch_url <- paste0(
+    #   "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?",
+    #   "db=pubmed&retmode=json&retmax=5&term=", encoded_term
+    # )
+
     
     search_response <- tryCatch({
       GET(esearch_url)
@@ -1257,18 +1311,229 @@ server <- function(input, output, session) {
     
     return(links)
   }
-  
-  
-  
   observeEvent(input$panel4_on, {
     req(processedData())
-    significant_proteins <- processedData()$significant_proteins$Protein
-    pubmed_links_list <- lapply(significant_proteins, function(prot) {
-      links <- getPubMedLinks(prot)
-      list(protein = prot, links = links)
+    
+    # Log that the event was triggered
+    cat("=== PubMed Search Started ===\n")
+    cat("Timestamp:", as.character(Sys.time()), "\n")
+    
+    result_data <- processedData()$result
+    significant_proteins <- subset(result_data, Significance != "Not Significant")
+    
+    cat("Total significant proteins found:", nrow(significant_proteins), "\n")
+    cat("Protein accessions:", paste(significant_proteins$Protein, collapse = ", "), "\n")
+    
+    # Check if Gene column exists
+    if("Gene" %in% colnames(significant_proteins)) {
+      cat("Gene column found in data\n")
+    } else {
+      cat("WARNING: No Gene column found in data\n")
+    }
+    
+    pubmed_links_list <- lapply(1:nrow(significant_proteins), function(i) {
+      protein_acc <- significant_proteins$Protein[i]
+      
+      # Log details for each protein
+      cat("\n--- Processing protein", i, "of", nrow(significant_proteins), "---\n")
+      cat("Protein accession:", protein_acc, "\n")
+      
+      # Initialize search_term
+      search_term <- NULL
+      
+      # Step 1: Check if Gene column exists and has valid data
+      if("Gene" %in% colnames(significant_proteins) && 
+         !is.na(significant_proteins$Gene[i]) && 
+         significant_proteins$Gene[i] != "") {
+        
+        gene_name <- significant_proteins$Gene[i]
+        cat("Gene name from data:", gene_name, "\n")
+        
+        # Step 2: Check if protein_acc and gene_name are the same
+        if(protein_acc == gene_name) {
+          cat("Protein accession and gene name are identical:", protein_acc, "\n")
+          cat("Looking up gene name from UniProt...\n")
+          
+          # Use existing get_uniprot_metadata function
+          meta <- get_uniprot_metadata(protein_acc)
+          
+          if(!is.null(meta) && !is.null(meta$gene) && !is.na(meta$gene) && meta$gene != "") {
+            # Clean the gene name (remove evidence tags)
+            uniprot_gene <- trimws(gsub("\\{[^}]*\\}", "", meta$gene))
+            cat("Found gene name from UniProt:", uniprot_gene, "\n")
+            
+            # Check if UniProt gene is different from what we had
+            if(uniprot_gene != protein_acc) {
+              search_term <- uniprot_gene
+              cat("Using UniProt gene name for search:", search_term, "\n")
+            } else {
+              cat("UniProt gene name same as accession, will use protein name instead\n")
+              if(!is.null(meta$protein) && !is.na(meta$protein) && meta$protein != "") {
+                protein_name <- trimws(gsub("\\{[^}]*\\}", "", meta$protein))
+                search_term <- protein_name
+                cat("Using protein name for search:", search_term, "\n")
+              } else {
+                search_term <- protein_acc
+                cat("No protein name found, using accession:", search_term, "\n")
+              }
+            }
+          } else {
+            cat("Could not retrieve gene name from UniProt\n")
+            search_term <- protein_acc
+            cat("Using original accession for search:", search_term, "\n")
+          }
+        } else {
+          # Gene name is different from protein accession, use it directly
+          search_term <- gene_name
+          cat("Using gene name from data for search:", search_term, "\n")
+        }
+      } else {
+        # No valid gene name in data, try UniProt lookup
+        cat("No valid gene name in data\n")
+        cat("Attempting UniProt lookup for gene name...\n")
+        
+        # Use existing get_uniprot_metadata function
+        meta <- get_uniprot_metadata(protein_acc)
+        
+        if(!is.null(meta) && !is.null(meta$gene) && !is.na(meta$gene) && meta$gene != "") {
+          # Clean the gene name (remove evidence tags)
+          uniprot_gene <- trimws(gsub("\\{[^}]*\\}", "", meta$gene))
+          cat("Found gene name from UniProt:", uniprot_gene, "\n")
+          search_term <- uniprot_gene
+          cat("Using UniProt gene name for search:", search_term, "\n")
+        } else {
+          cat("Could not retrieve gene name from UniProt\n")
+          # Try protein name as fallback
+          if(!is.null(meta) && !is.null(meta$protein) && !is.na(meta$protein) && meta$protein != "") {
+            protein_name <- trimws(gsub("\\{[^}]*\\}", "", meta$protein))
+            search_term <- protein_name
+            cat("Using protein name for search:", search_term, "\n")
+          } else {
+            search_term <- protein_acc
+            cat("Using original accession for search:", search_term, "\n")
+          }
+        }
+      }
+      
+      # Final search term log
+      cat("FINAL SEARCH TERM:", search_term, "\n")
+      
+      # Call the existing PubMed function
+      cat("Calling getPubMedLinks...\n")
+      links <- getPubMedLinks(search_term)
+      
+      # Log the results
+      if(is.null(links)) {
+        cat("No links returned for", search_term, "\n")
+      } else {
+        cat("Found", length(links), "links for", search_term, "\n")
+      }
+      
+      list(protein = protein_acc, links = links)
     })
+    
+    cat("\n=== PubMed Search Completed ===\n")
+    cat("Total proteins processed:", length(pubmed_links_list), "\n")
+    
     pubmedLinks(pubmed_links_list)
   })
+  
+  
+  # observeEvent(input$panel4_on, {
+  #   req(processedData())
+  #   
+  #   # Log that the event was triggered
+  #   cat("=== PubMed Search Started ===\n")
+  #   cat("Timestamp:", as.character(Sys.time()), "\n")
+  #   
+  #   result_data <- processedData()$result
+  #   significant_proteins <- subset(result_data, Significance != "Not Significant")
+  #   
+  #   cat("Total significant proteins found:", nrow(significant_proteins), "\n")
+  #   cat("Protein accessions:", paste(significant_proteins$Protein, collapse = ", "), "\n")
+  #   
+  #   # Check if Gene column exists
+  #   if("Gene" %in% colnames(significant_proteins)) {
+  #     cat("Gene column found in data\n")
+  #   } else {
+  #     cat("WARNING: No Gene column found in data\n")
+  #   }
+  #   
+  #   pubmed_links_list <- lapply(1:nrow(significant_proteins), function(i) {
+  #     protein_acc <- significant_proteins$Protein[i]
+  #     
+  #     # Log details for each protein
+  #     cat("\n--- Processing protein", i, "of", nrow(significant_proteins), "---\n")
+  #     cat("Protein accession:", protein_acc, "\n")
+  #     
+  #     # Use gene name if available, otherwise use protein accession
+  #     search_term <- if("Gene" %in% colnames(significant_proteins) && 
+  #                       !is.na(significant_proteins$Gene[i]) && 
+  #                       significant_proteins$Gene[i] != "") {
+  #       gene_name <- significant_proteins$Gene[i]
+  #       cat("Gene name found:", gene_name, "\n")
+  #       cat("Using GENE NAME for search\n")
+  #       gene_name
+  #     } else {
+  #       cat("No valid gene name found\n")
+  #       cat("Using PROTEIN ACCESSION for search\n")
+  #       protein_acc
+  #     }
+  #     
+  #     # This is the key log - what we're actually searching for
+  #     cat("SEARCH TERM:", search_term, "\n")
+  #     
+  #     # Call the PubMed function
+  #     cat("Calling getPubMedLinks...\n")
+  #     links <- getPubMedLinks(search_term)
+  #     
+  #     # Log the results
+  #     if(is.null(links)) {
+  #       cat("No links returned for", search_term, "\n")
+  #     } else {
+  #       cat("Found", length(links), "links for", search_term, "\n")
+  #     }
+  #     
+  #     list(protein = protein_acc, links = links)
+  #   })
+  #   
+  #   cat("\n=== PubMed Search Completed ===\n")
+  #   cat("Total proteins processed:", length(pubmed_links_list), "\n")
+  #   
+  #   pubmedLinks(pubmed_links_list)
+  # })
+  
+  # observeEvent(input$panel4_on, {
+  #   req(processedData())
+  #   result_data <- processedData()$result
+  #   significant_proteins <- subset(result_data, Significance != "Not Significant")
+  #   
+  #   pubmed_links_list <- lapply(1:nrow(significant_proteins), function(i) {
+  #     protein_acc <- significant_proteins$Protein[i]
+  #     # Use gene name if available, otherwise use protein accession
+  #     search_term <- if("Gene" %in% colnames(significant_proteins) && 
+  #                       !is.na(significant_proteins$Gene[i]) && 
+  #                       significant_proteins$Gene[i] != "") {
+  #       significant_proteins$Gene[i]
+  #     } else {
+  #       protein_acc
+  #     }
+  #     
+  #     links <- getPubMedLinks(search_term)
+  #     list(protein = protein_acc, links = links)
+  #   })
+  #   pubmedLinks(pubmed_links_list)
+  # })
+  
+  # observeEvent(input$panel4_on, {
+  #   req(processedData())
+  #   significant_proteins <- processedData()$significant_proteins$Protein
+  #   pubmed_links_list <- lapply(significant_proteins, function(prot) {
+  #     links <- getPubMedLinks(prot)
+  #     list(protein = prot, links = links)
+  #   })
+  #   pubmedLinks(pubmed_links_list)
+  # })
   
   observe({
     req(pubmedLinks())
